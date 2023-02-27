@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+const dateSchema = mongoose.Schema({
+    startDate: Date,
+    endDate: Date,
+});
+
 const surfSchema = mongoose.Schema({
 	owner: String,
 	type: String,
@@ -8,12 +13,7 @@ const surfSchema = mongoose.Schema({
 	dayPrice: Number,
     pictures: [String],
     place:{ type: mongoose.Schema.Types.ObjectId, ref: 'places' },
-    availabilities: [dateRange],
-});
-
-const dateRange = mongoose.Schema({
-    startDate: Date,
-    endDate: Date,
+    availabilities: [dateSchema],
 });
 
 const Surf = mongoose.model('surfs', surfSchema);
