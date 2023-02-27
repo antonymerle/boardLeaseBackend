@@ -11,7 +11,7 @@ const userSchema = mongoose.Schema({
   address: addressSchema,
   phone: String,
   profilepic: String,
-  favorites: { type: mongoose.Schema.Types.ObjectId, ref: "surfs" }, // TODO FK
+  favorites: { type: mongoose.Schema.Types.ObjectId, ref: "surfs" },
 });
 
 const addressSchema = mongoose.Schema({
