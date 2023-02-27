@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
 
+const addressSchema = mongoose.Schema({
+  number: Number,
+  addressLine: String,
+  zipCode: Number,
+  city: String,
+});
+
 const userSchema = mongoose.Schema({
   firstname: String,
   lastname: String,
@@ -12,13 +19,6 @@ const userSchema = mongoose.Schema({
   phone: String,
   profilepic: String,
   favorites: { type: mongoose.Schema.Types.ObjectId, ref: "surfs" },
-});
-
-const addressSchema = mongoose.Schema({
-  number: Number,
-  addressLine: String,
-  zipCode: Number,
-  city: String,
 });
 
 const User = mongoose.model("users", userSchema);
