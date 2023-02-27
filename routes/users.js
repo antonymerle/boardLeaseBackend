@@ -9,14 +9,8 @@ const User = require("../models/users");
 /**
  * @name POST: users/signup
  * @desc Route serving signup form.
- * @param {String} firstname - user firstname
- * @param {String} lastname - user lastname
- * @param {String} username - user username
- * @param {String} email - user email
- * @param {String} password - user password
- * @returns {Boolean} result
- * @returns {String} token - only if success
- * @returns {String} error - only if failure
+ * @param {{firstname: String, lastname: String, username: String, email: String, password: String}}
+ * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
 
 router.post("/signup", (req, res) => {
@@ -52,11 +46,8 @@ router.post("/signup", (req, res) => {
 /**
  * @name POST: users/signin
  * @desc Route serving signin form.
- * @param {String} email - user email
- * @param {String} password - user password
- * @returns {Boolean} result
- * @returns {String} token - only if success
- * @returns {String} error - only if failure
+ * @param {{email: String, password: String}}
+ * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
 router.post("/signin", (req, res) => {
   const { email, password } = req.body;
