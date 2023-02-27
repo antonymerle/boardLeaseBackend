@@ -6,7 +6,9 @@ var logger = require("morgan");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
-var surfs
+var surfsRouter = require("./routes/surfs");
+var placesRouter = require("./routes/places");
+var bookingsRouter = require("./routes/bookings");
 
 var app = express();
 
@@ -25,5 +27,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
+app.use("/surfs", surfsRouter);
+app.use("/places", placesRouter);
+app.use("/bookings", bookingsRouter);
 
 module.exports = app;
