@@ -5,12 +5,12 @@ const User = require("../models/users");
 
 /* POST surf */
 router.post('/surfs', (req, res) => {
-    const { owner, type, level, name, dayPrice, pictures, place, availabilities} = req.body;
+    const { owner, type, level, name, dayPrice, pictures, placeName, latitude, longitude, availabilities} = req.body;
     if (!owner || !type) {
       res.json({ result: false, error: 'Missing or empty fields' });
       return;
     }
-    const newSurf = new Surf({ owner, type, level, name, dayPrice, pictures, place, availabilities });
+    const newSurf = new Surf({ owner, type, level, name, dayPrice, pictures, placeName, latitude, longitude, availabilities });
     newSurf.save().then(() => {
     res.json({ result: true });
     })
@@ -23,23 +23,16 @@ router.get("/surfs", (req, res, next) => {
   });
 });*/
 
-/* GET all surfs for a place and dates { $regex: new RegExp(place, "i")} */
-router.get("/", (req, res, next) => {
-    const { place, availabilities } = req.body;
-  if (!place) {
+
+/* GET all surfs for a place and dates */
+router.get("/", (req, res) => {
+    const { placeName, availabilities } = req.body;
+  if (!placeName) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
-    Surf.aggregate([{
-        $lookup:
-          {
-            from: "places",
-            localField: "place",
-            foreignField: "name",
-            as: "toto"
-        }
-    }]) 
-.then((data) => {
+  Surf.find({ placeName:{ $regex: new RegExp(placeName, "i")}})
+    .then((data) => {
     if (data) {
       res.json({ result: true, surfs: data });
     } else {
