@@ -31,10 +31,11 @@ router.post("/signup", (req, res) => {
         email,
         password: bcrypt.hashSync(password, 10),
         token,
+        // TODO : create empty favorites array;
       });
 
       newUser.save().then(() => {
-        res.json({ result: true, token }); // TODO: renvoyer la fiche utilisateur au complet firstname, lastname, username, email
+        res.json({ result: true, token, firstname, lastname, username, email });
       });
     } else {
       // User already exists in database
@@ -63,7 +64,14 @@ router.post("/signin", (req, res) => {
       res.json({ result: false, error: "User not found" });
       return;
     } else if (bcrypt.compareSync(password, data.password)) {
-      res.json({ result: true, token: data.token }); // TODO: renvoyer la fiche utilisateur au complet firstname, lastname, username, email
+      res.json({
+        result: true,
+        token: data.token,
+        email,
+        firstname: data.firstname,
+        lastname: data.lastname,
+        username: data.username,
+      });
     } else {
       res.json({ result: false, error: "Wrong password." });
     }
