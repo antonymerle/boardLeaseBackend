@@ -34,7 +34,7 @@ router.post("/signup", (req, res) => {
       });
 
       newUser.save().then(() => {
-        res.json({ result: true, token });
+        res.json({ result: true, token }); // TODO: renvoyer la fiche utilisateur au complet firstname, lastname, username, email
       });
     } else {
       // User already exists in database
@@ -59,10 +59,13 @@ router.post("/signin", (req, res) => {
   User.findOne({
     email: email,
   }).then((data) => {
-    if (bcrypt.compareSync(password, data.password)) {
-      res.json({ result: true, token: data.token });
-    } else {
+    if (!data) {
       res.json({ result: false, error: "User not found" });
+      return;
+    } else if (bcrypt.compareSync(password, data.password)) {
+      res.json({ result: true, token: data.token }); // TODO: renvoyer la fiche utilisateur au complet firstname, lastname, username, email
+    } else {
+      res.json({ result: false, error: "Wrong password." });
     }
   });
 });
