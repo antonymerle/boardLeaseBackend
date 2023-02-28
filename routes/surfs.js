@@ -45,7 +45,8 @@ router.get("/", (req, res) => {
   });
 });
 
-/* POST all surfs for a place and dates */
+/* POST all surfs for a place and dates 
+TO DO ANTONY PLZ */
 router.post("/", (req, res) => {
   const { placeName, availabilities } = req.body;
   if (!placeName) {
