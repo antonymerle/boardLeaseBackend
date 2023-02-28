@@ -18,7 +18,7 @@ const userSchema = mongoose.Schema({
   address: addressSchema,
   phone: String,
   profilepic: String,
-  favorites: { type: mongoose.Schema.Types.ObjectId, ref: "surfs" },
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "surfs" }],
 });
 
 const User = mongoose.model("users", userSchema);

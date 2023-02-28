@@ -6,13 +6,15 @@ const dateSchema = mongoose.Schema({
 });
 
 const surfSchema = mongoose.Schema({
-	owner: String,
+	owner: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
 	type: String,
 	level: String,
 	name: String,
 	dayPrice: Number,
     pictures: [String],
-    place:{ type: mongoose.Schema.Types.ObjectId, ref: 'places' },
+    placeName: String,
+    latitude: Number,
+    longitude: Number,
     availabilities: [dateSchema],
 });
 
