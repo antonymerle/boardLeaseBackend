@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 
 require("../models/connection");
 const User = require("../models/users");
+const Surf = require("../models/surfs");
 
 /**
  * @name POST: users/signup
@@ -31,11 +32,20 @@ router.post("/signup", (req, res) => {
         email,
         password: bcrypt.hashSync(password, 10),
         token,
+        favorites: [],
         // TODO : create empty favorites array;
       });
 
       newUser.save().then(() => {
-        res.json({ result: true, token, firstname, lastname, username, email });
+        res.json({
+          result: true,
+          token,
+          firstname,
+          lastname,
+          username,
+          email,
+          favorites,
+        });
       });
     } else {
       // User already exists in database
@@ -59,23 +69,26 @@ router.post("/signin", (req, res) => {
 
   User.findOne({
     email: email,
-  }).then((data) => {
-    if (!data) {
-      res.json({ result: false, error: "User not found" });
-      return;
-    } else if (bcrypt.compareSync(password, data.password)) {
-      res.json({
-        result: true,
-        token: data.token,
-        email,
-        firstname: data.firstname,
-        lastname: data.lastname,
-        username: data.username,
-      });
-    } else {
-      res.json({ result: false, error: "Wrong password." });
-    }
-  });
+  })
+    .populate("favorites")
+    .then((data) => {
+      if (!data) {
+        res.json({ result: false, error: "User not found" });
+        return;
+      } else if (bcrypt.compareSync(password, data.password)) {
+        res.json({
+          result: true,
+          token: data.token,
+          email,
+          firstname: data.firstname,
+          lastname: data.lastname,
+          username: data.username,
+          favorites: data.favorites,
+        });
+      } else {
+        res.json({ result: false, error: "Wrong password." });
+      }
+    });
 });
 
 module.exports = router;
