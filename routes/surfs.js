@@ -39,7 +39,7 @@ router.post("/surfs", (req, res) => {
 });
 
 /* GET all surfs listing */
-router.get("/surfs", (req, res) => {
+router.get("/", (req, res) => {
   Surf.find().then((data) => {
     res.json({ surfs: data });
   });
@@ -153,5 +153,56 @@ router.delete("/tenant/:id", (req, res) => {
     }
   });
 });
+
+// Get all surfs filtered by type
+router.get("/filter/type", (req, res) => {
+  Surf.find({ type: req.body.type })
+    .then((surfType) => {
+      if (surfType) {
+        res.json({ result: true, surfType });
+      } else {
+        res.json({ result: false, error: "not found" });
+      }
+    });
+});
+
+// Get all surfs filtered by level
+router.get("/filter/level", (req, res) => {
+  Surf.find({ level: req.body.level })
+    .then((surfLevel) => {
+      if (surfLevel) {
+        res.json({ result: true, surfLevel });
+      } else {
+        res.json({ result: false, error: "not found" });
+      }
+    });
+});
+
+// Get all surfs filtered price below
+router.get("/filter/priceBelow", (req, res) => {
+  Surf.find({ dayPrice: { $lte: req.body.dayPrice} })
+    .then((surfBelowPrice) => {
+      if (surfBelowPrice) {
+        res.json({ result: true, surfBelowPrice });
+      } else {
+        res.json({ result: false, error: "not found" });
+      }
+    });
+});
+
+
+// Get all surfs filtered price above
+router.get("/filter/priceAbove", (req, res) => {
+  Surf.find({ dayPrice: { $gte: req.body.dayPrice} })
+    .then((surfBelowPrice) => {
+      if (surfBelowPrice) {
+        res.json({ result: true, surfBelowPrice });
+      } else {
+        res.json({ result: false, error: "not found" });
+      }
+    });
+});
+
+
 
 module.exports = router;
