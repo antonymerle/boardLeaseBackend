@@ -63,7 +63,7 @@ router.post("/", (req, res) => {
   );
 });
 
-/* GET Add surfs to favorites */
+/* PUT Add surfs to favorites for an user */
 router.put("/addFavorite/:id", (req, res) => {
   if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -90,6 +90,27 @@ router.put("/addFavorite/:id", (req, res) => {
   );
 });
 
+/* DELETE/UPDATE surfs from favorites for an user */
+router.delete("/removeFavorite/:id", (req, res) => {
+  if (!req.params.id) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  User.findOneAndUpdate(
+    { username: req.body.username },
+    { $pull: { favorites: req.params.id } }
+    )
+    .then(() => {
+      User.findOne({ username: req.body.username })
+        .populate("favorites")
+        .then((data) => {
+          res.json({ result: true, data });
+        });
+    });
+  });
+
+
 // Get all surfs listing from favorites for an user
 router.get("/favorites", (req, res) => {
   User.findOne({ username: req.body.username })
@@ -102,6 +123,7 @@ router.get("/favorites", (req, res) => {
       }
     });
 });
+
 
 /* DELETE surfs for an owner*/
 router.delete("/owner/:id", (req, res) => {
@@ -116,6 +138,7 @@ router.delete("/owner/:id", (req, res) => {
     }
   });
 });
+
 
 /* DELETE surfs for a tenant*/
 router.delete("/tenant/:id", (req, res) => {
