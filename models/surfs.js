@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 
+const dateRange = mongoose.Schema({
+  startDate: Date,
+  endDate: Date,
+});
+
 const surfSchema = mongoose.Schema({
   owner: String,
   type: String,
@@ -11,11 +16,6 @@ const surfSchema = mongoose.Schema({
   latitude: Number,
   longitude: Number,
   availabilities: [dateRange],
-});
-
-const dateRange = mongoose.Schema({
-  startDate: Date,
-  endDate: Date,
 });
 
 const Surf = mongoose.model("surfs", surfSchema);
