@@ -29,7 +29,7 @@ router.post("/signup", async (req, res) => {
   // error handling
   if (!authMethod) {
     return res.json({ result: false, error: "authMethod field is required" });
-  } else if (authMethod !== "classic" || authMethod !== "googleConnect") {
+  } else if (authMethod !== "classic" && authMethod !== "googleConnect") {
     console.error("Unknown auth method");
     return res.json({ result: false, error: "Unknown authentication method" });
   }
