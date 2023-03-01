@@ -6,7 +6,6 @@ const { googleAuthVerify } = require("../lib/leaseLibrary");
 
 require("../models/connection");
 const User = require("../models/users");
-const Surf = require("../models/surfs");
 
 /**
  * @name POST: users/signup
@@ -110,10 +109,7 @@ router.post("/signin", async (req, res) => {
 
   // top level user data variables
   // we will assign them later, depending on the auth method
-  let firstname,
-    lastname,
-    username,
-    email,
+  let email,
     password = null;
 
   // error handling
@@ -185,17 +181,6 @@ router.post("/signin", async (req, res) => {
         res.json({ result: false, error: "Wrong password." });
       }
     });
-});
-
-router.post("/gverify", async (req, res) => {
-  const token = req.body.token;
-  if (!token) {
-    res.json({ result: false, error: "Token is missing" });
-  }
-
-  const response = await googleAuthVerify(token);
-  // console.log(googleAuthVerify().catch(console.error));
-  res.json({ result: true, ...response });
 });
 
 module.exports = router;
