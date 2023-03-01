@@ -16,6 +16,8 @@ const surfSchema = mongoose.Schema({
     latitude: Number,
     longitude: Number,
     availabilities: [dateSchema],
+    deposit: Number,
+    rating: Number,
 });
 
 const Surf = mongoose.model("surfs", surfSchema);
