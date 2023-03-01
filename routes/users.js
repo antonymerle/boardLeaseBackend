@@ -65,6 +65,7 @@ router.post("/signup", async (req, res) => {
   }
 
   // We have all the necessary data, now let's check if user has not already been registered
+  // Todo faire recherche sur email pour ID unique
   User.findOne({ username: username }).then((data) => {
     if (data === null) {
       const token = uid2(32);
@@ -172,6 +173,7 @@ router.post("/signin", async (req, res) => {
       ) {
         res.json({
           result: true,
+          authMethod, // to handle lougout method on the frontend TODO: add it on redux
           token: data.token,
           email,
           firstname: data.firstname,
