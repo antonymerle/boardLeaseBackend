@@ -64,8 +64,7 @@ router.post("/signup", async (req, res) => {
   }
 
   // We have all the necessary data, now let's check if user has not already been registered
-  // Todo faire recherche sur email pour ID unique
-  User.findOne({ username: username }).then((data) => {
+  User.findOne({ email }).then((data) => {
     if (data === null) {
       const token = uid2(32);
       const newUser = new User({
