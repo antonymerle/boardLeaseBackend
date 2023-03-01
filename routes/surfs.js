@@ -155,49 +155,38 @@ router.delete("/tenant/:id", (req, res) => {
   });
 });
 
-// Get all surfs filtered by type
-router.get("/filter/type", (req, res) => {
-  Surf.find({ type: req.body.type })
-    .then((surfType) => {
-      if (surfType) {
-        res.json({ result: true, surfType });
-      } else {
-        res.json({ result: false, error: "not found" });
-      }
-    });
-});
 
-// Get all surfs filtered by level
-router.get("/filter/level", (req, res) => {
-  Surf.find({ level: req.body.level })
-    .then((surfLevel) => {
-      if (surfLevel) {
-        res.json({ result: true, surfLevel });
-      } else {
-        res.json({ result: false, error: "not found" });
-      }
-    });
-});
-
-// Get all surfs filtered price below
-router.get("/filter/priceBelow", (req, res) => {
-  Surf.find({ dayPrice: { $lte: req.body.dayPrice} })
-    .then((surfBelowPrice) => {
-      if (surfBelowPrice) {
-        res.json({ result: true, surfBelowPrice });
-      } else {
-        res.json({ result: false, error: "not found" });
-      }
-    });
-});
-
-
-// Get all surfs filtered price above
-router.get("/filter/priceAbove", (req, res) => {
-  Surf.find({ dayPrice: { $gte: req.body.dayPrice} })
-    .then((surfBelowPrice) => {
-      if (surfBelowPrice) {
-        res.json({ result: true, surfBelowPrice });
+/*Route POST pour la gestion des recherches de surfs et de filtres */
+router.post("/filter", (req, res) => {
+//On vérifie si placename et availavilities sont bien renseignés
+  const { placeName, availabilities } = req.body;
+  if (!placeName) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+//On déclare 2 variables afin de savoir si on a une valeur dans type et level 
+//si non (en cas de tableau vide) on affiche toutes les clefs.
+  let type = req.body.type;
+    if (type.length < 1) {
+      type = { $exists: true };
+    }
+    let level = req.body.level;
+    if (level.length < 1) {
+      level = { $exists: true };
+    }
+  console.log(req.body);
+//On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
+    Surf.find({
+    type: type,
+    level: level,
+    dayPrice: { $lte: req.body.maxPrice},
+    rating: { $gte: req.body.minRating },
+    placeName: { $regex: new RegExp(placeName, "i") }
+    })
+//Si la réponse est true on retour la réponse dans data si false on retourne un result false
+    .then((data) => {
+      if (data) {
+        res.json({data});
       } else {
         res.json({ result: false, error: "not found" });
       }
