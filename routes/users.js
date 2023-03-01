@@ -15,14 +15,49 @@ const Surf = require("../models/surfs");
  * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
 
-router.post("/signup", (req, res) => {
-  const { firstname, lastname, username, email, password } = req.body;
-  if (!firstname || !lastname || !username || !email || !password) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+router.post("/signup", async (req, res) => {
+  const {
+    authMethod,
+    googleCredentialResponse,
+    // firstname,
+    // lastname,
+    // username,
+    // email,
+    // password,
+  } = req.body;
+
+  // error handling
+  if (!authMethod) {
+    return res.json({ result: false, error: "authMethod field is required" });
+  } else if (authMethod !== "classic" || authMethod !== "googleConnect") {
+    console.error("Unknown auth method");
+    return res.json({ result: false, error: "Unknown authentication method" });
   }
 
-  // Check if the user has not already been registered
+  // auth method handling logic : two branches
+  // 1. googleConnect
+  // 2. classic
+  if (authMethod === "googleConnect") {
+    try {
+      const { isTokenValid, firstname, lastname, username, email } =
+        googleAuthVerify(googleCredentialResponse);
+
+      // res.json({ result: true, ...response });
+    } catch (error) {
+      return res.json({ result: false, error });
+    }
+
+    // console.log(googleAuthVerify().catch(console.error));
+    // res.json({ result: true, ...response });
+  } else if (authMethod === "classic") {
+    const { firstname, lastname, username, email, password } = req.body;
+
+    if (!firstname || !lastname || !username || !email || !password) {
+      return res.json({ result: false, error: "Missing or empty fields" });
+    }
+  }
+
+  // We have all the necessary data, now let's check if user has not already been registered
   User.findOne({ username: username }).then((data) => {
     if (data === null) {
       const token = uid2(32);
@@ -31,15 +66,16 @@ router.post("/signup", (req, res) => {
         lastname,
         username,
         email,
-        password: bcrypt.hashSync(password, 10),
+        password:
+          authMethod === "classic" ? bcrypt.hashSync(password, 10) : null,
         token,
         favorites: [],
-        // TODO : create empty favorites array;
       });
 
       newUser.save().then(() => {
         res.json({
           result: true,
+          authMethod, // to handle lougout method on the frontend TODO: add it on redux
           token,
           firstname,
           lastname,
