@@ -104,22 +104,72 @@ router.post("/signup", async (req, res) => {
  * @param {{email: String, password: String}}
  * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
-router.post("/signin", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+router.post("/signin", async (req, res) => {
+  const { authMethod, googleCredentialResponse } = req.body;
+
+  // top level user data variables
+  // we will assign them later, depending on the auth method
+  let firstname,
+    lastname,
+    username,
+    email,
+    password = null;
+
+  // error handling
+  if (!authMethod) {
+    return res.json({ result: false, error: "authMethod field is required" });
+  } else if (authMethod !== "classic" && authMethod !== "googleConnect") {
+    console.error("Unknown auth method");
+    return res.json({ result: false, error: "Unknown authentication method" });
   }
 
+  // auth method handling logic : two branches
+  // 1. googleConnect
+  // 2. classic
+
+  if (authMethod === "googleConnect") {
+    console.log(googleCredentialResponse);
+
+    const dataFromGoogleToken = await googleAuthVerify(
+      googleCredentialResponse
+    );
+
+    const isTokenValid = dataFromGoogleToken.isTokenValid;
+
+    email = dataFromGoogleToken.email;
+
+    if (!isTokenValid)
+      return res.json({
+        result: false,
+        error: "google connect failed to authenticate user",
+      });
+  } else if (authMethod === "classic") {
+    email = req.body.email;
+    password = req.body.password;
+    console.log({ email, password });
+
+    if (!email || !password) {
+      return res.json({ result: false, error: "Missing or empty fields" });
+    }
+  }
+
+  // We have all the necessary data, now let's check if user is in DB
   User.findOne({
     email: email,
   })
     .populate("favorites")
     .then((data) => {
+      console.log(data);
+
       if (!data) {
         res.json({ result: false, error: "User not found" });
         return;
-      } else if (bcrypt.compareSync(password, data.password)) {
+      } else if (
+        // no need for password check if user is google authenticated
+        (authMethod === "classic" &&
+          bcrypt.compareSync(password, data.password)) ||
+        authMethod === "googleConnect"
+      ) {
         res.json({
           result: true,
           token: data.token,
