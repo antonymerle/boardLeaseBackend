@@ -109,6 +109,18 @@ router.post("/signup", async (req, res) => {
       // });
 
       const newUser = {
+        authMethod,
+        firstname,
+        lastname,
+        username,
+        email,
+        favorites: [],
+      };
+
+      const jwtToken = jwt.sign(newUser, secretKey, { expiresIn: "1y" });
+
+      const newUserDocument = new User({
+        authMethod,
         firstname,
         lastname,
         username,
@@ -116,11 +128,7 @@ router.post("/signup", async (req, res) => {
         password:
           authMethod === "classic" ? bcrypt.hashSync(password, 10) : null,
         favorites: [],
-      };
-
-      const jwtToken = jwt.sign(newUser, secretKey, { expiresIn: "1y" });
-
-      const newUserDocument = new User({ ...newUser });
+      });
       newUserDocument.save().then(() => {
         res.json({ jwtToken });
       });
