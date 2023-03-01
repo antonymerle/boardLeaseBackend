@@ -16,15 +16,15 @@ const Surf = require("../models/surfs");
  */
 
 router.post("/signup", async (req, res) => {
-  const {
-    authMethod,
-    googleCredentialResponse,
-    // firstname,
-    // lastname,
-    // username,
-    // email,
-    // password,
-  } = req.body;
+  const { authMethod, googleCredentialResponse } = req.body;
+
+  // top level user data variables
+  // we will assign them later, depending on the auth method
+  let firstname,
+    lastname,
+    username,
+    email,
+    password = null;
 
   // error handling
   if (!authMethod) {
@@ -38,17 +38,24 @@ router.post("/signup", async (req, res) => {
   // 1. googleConnect
   // 2. classic
   if (authMethod === "googleConnect") {
-    try {
-      const { isTokenValid, firstname, lastname, username, email } =
-        googleAuthVerify(googleCredentialResponse);
+    console.log(googleCredentialResponse);
 
-      // res.json({ result: true, ...response });
-    } catch (error) {
-      return res.json({ result: false, error });
-    }
+    const dataFromGoogleToken = await googleAuthVerify(
+      googleCredentialResponse
+    );
 
-    // console.log(googleAuthVerify().catch(console.error));
-    // res.json({ result: true, ...response });
+    const isTokenValid = dataFromGoogleToken.isTokenValid;
+
+    firstname = dataFromGoogleToken.firstname;
+    lastname = dataFromGoogleToken.lastname;
+    username = dataFromGoogleToken.username;
+    email = dataFromGoogleToken.email;
+
+    if (!isTokenValid)
+      return res.json({
+        result: false,
+        error: "google connect failed to authenticate user",
+      });
   } else if (authMethod === "classic") {
     const { firstname, lastname, username, email, password } = req.body;
 
@@ -81,7 +88,7 @@ router.post("/signup", async (req, res) => {
           lastname,
           username,
           email,
-          favorites,
+          favorites: [],
         });
       });
     } else {
