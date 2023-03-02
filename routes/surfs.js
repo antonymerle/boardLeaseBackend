@@ -46,7 +46,7 @@ router.get("/", (req, res) => {
 });
 
 /* POST all surfs for a place and dates 
-TO DO ANTONY PLZ */
+A SUPPRIMER car nous avons la route recherche filtre ?
 router.post("/", (req, res) => {
   const { placeName, availabilities } = req.body;
   if (!placeName) {
@@ -62,7 +62,13 @@ router.post("/", (req, res) => {
       }
     }
   );
-});
+});*/
+
+/* Update rating stars*/
+route.put("/rating", (req, res) => {
+  
+
+})
 
 /* PUT Add surfs to favorites for an user */
 router.put("/addFavorite/:id", (req, res) => {
@@ -191,5 +197,7 @@ router.post("/filter", (req, res) => {
       }
     });
 });
+
+
 
 module.exports = router;
