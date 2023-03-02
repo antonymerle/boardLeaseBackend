@@ -236,4 +236,61 @@ router.post("/signin", async (req, res) => {
     });
 });
 
+/**
+ * @name PUT: users
+ * @desc Route serving signin form.
+ * @param {{token: String}} - JSON Web Token
+ * @returns {{result: Boolean, jwtToken: String | null, error: String | null}}
+ */
+router.post("/", verifyJWT, (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.json({ result: false, error: "Token missing." });
+  }
+
+  // We have all the necessary data, now let's check if user is in DB
+  User.findOne({
+    email: email,
+  })
+    .populate("favorites")
+    .then((data) => {
+      console.log(data);
+
+      if (!data) {
+        res.json({ result: false, error: "User not found" });
+        return;
+      } else if (
+        // no need for password check if user is google authenticated
+        (authMethod === "classic" &&
+          bcrypt.compareSync(password, data.password)) ||
+        authMethod === "googleConnect"
+      ) {
+        const loggedUser = {
+          authMethod,
+          email,
+          firstname: data.firstname,
+          lastname: data.lastname,
+          username: data.username,
+          favorites: data.favorites, // to handle lougout method on the frontend TODO: add it on redux
+        };
+
+        const jwtToken = jwt.sign(loggedUser, secretKey, { expiresIn: "1y" });
+        res.json({ jwtToken });
+        // res.json({
+        //   result: true,
+        //   authMethod, // to handle lougout method on the frontend TODO: add it on redux
+        //   token: data.token,
+        //   email,
+        //   firstname: data.firstname,
+        //   lastname: data.lastname,
+        //   username: data.username,
+        //   favorites: data.favorites,
+        // });
+      } else {
+        res.json({ result: false, error: "Wrong password." });
+      }
+    });
+});
+
 module.exports = router;
