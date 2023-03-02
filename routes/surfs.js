@@ -1,4 +1,5 @@
 var express = require("express");
+const { dateRangeOverlaps } = require("../lib/leaseLibrary");
 var router = express.Router();
 const Surf = require("../models/surfs");
 const User = require("../models/users");
@@ -65,10 +66,9 @@ router.post("/", (req, res) => {
 });*/
 
 /* Update rating stars*/
-route.put("/rating", (req, res) => {
-  
+// route.put("/rating", (req, res) => {
 
-})
+// })
 
 /* PUT Add surfs to favorites for an user */
 router.put("/addFavorite/:id", (req, res) => {
@@ -107,16 +107,14 @@ router.delete("/removeFavorite/:id", (req, res) => {
   User.findOneAndUpdate(
     { username: req.body.username },
     { $pull: { favorites: req.params.id } }
-    )
-    .then(() => {
-      User.findOne({ username: req.body.username })
-        .populate("favorites")
-        .then((data) => {
-          res.json({ result: true, data });
-        });
-    });
+  ).then(() => {
+    User.findOne({ username: req.body.username })
+      .populate("favorites")
+      .then((data) => {
+        res.json({ result: true, data });
+      });
   });
-
+});
 
 // Get all surfs listing from favorites for an user
 router.get("/favorites", (req, res) => {
@@ -130,7 +128,6 @@ router.get("/favorites", (req, res) => {
       }
     });
 });
-
 
 /* DELETE surfs for an owner*/
 router.delete("/owner/:id", (req, res) => {
@@ -146,7 +143,6 @@ router.delete("/owner/:id", (req, res) => {
   });
 });
 
-
 /* DELETE surfs for a tenant*/
 router.delete("/tenant/:id", (req, res) => {
   Surf.deleteOne({ _id: req.params.id }).then((deletedDoc) => {
@@ -160,7 +156,6 @@ router.delete("/tenant/:id", (req, res) => {
     }
   });
 });
-
 
 /*Route POST pour la gestion des recherches de surfs et de filtres */
 router.post("/filter", (req, res) => {
@@ -177,27 +172,44 @@ router.post("/filter", (req, res) => {
   let level = req.body.level;
   if (level.length < 1) {
     level = { $exists: true };
-  } 
+  }
   console.log(req.body);
-//On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
-    Surf.find({
+  //On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
+  Surf.find({
     type: type,
     level: level,
-    dayPrice: { $lte: req.body.maxPrice},
+    dayPrice: { $lte: req.body.maxPrice },
     rating: { $gte: req.body.minRating },
     placeName: { $regex: new RegExp(placeName, "i") },
-    availabilities: req.body.availabilities
-    })
-//Si la réponse est true on retour la réponse dans data si false on retourne un result false
+    // availabilities: req.body.availabilities,
+  })
+    //Si la réponse est true on retour la réponse dans data si false on retourne un result false
     .then((data) => {
       if (data) {
-        res.json({data});
+        // console.log(req.body.availabilities);
+        console.log("test availabilities");
+
+        console.log(req.body.availabilities);
+
+        if (req.body.availabilities[0].startDate) {
+          let availableSurfs = [];
+          for (let surf of data) {
+            for (let dateRange of surf.availabilities) {
+              if (dateRangeOverlaps(req.body.availabilities[0], dateRange)) {
+                availableSurfs.push(surf);
+              }
+            }
+          }
+          console.log("availableSurfs:", availableSurfs);
+
+          res.json({ data: availableSurfs });
+        } else {
+          res.json({ data });
+        }
       } else {
         res.json({ result: false, error: "not found" });
       }
     });
 });
-
-
 
 module.exports = router;
