@@ -148,6 +148,7 @@ router.post("/signup", async (req, res) => {
  */
 router.post("/signin", async (req, res) => {
   const { authMethod, googleCredentialResponse } = req.body;
+  console.log(req.user);
 
   // top level user data variables
   // we will assign them later, depending on the auth method
@@ -234,6 +235,45 @@ router.post("/signin", async (req, res) => {
         res.json({ result: false, error: "Wrong password." });
       }
     });
+});
+
+/**
+ * @name PUT: users
+ * @desc Route serving profile page to modify the user personal informations.
+ * @returns {{result: Boolean, token: String | null, error: String | null}}
+ */
+
+router.put("/", verifyJWT, (req, res) => {
+  const { firstname, lastname, username, email } = req.body;
+  if (!firstname && !lastname && !username && !email) {
+    return res.json({ result: false, error: "Missing or empty fields." });
+  }
+  // console.log(firstname, lastname, username);
+
+  const user = req.user;
+  console.log(user);
+
+  // TODO : send back new JWT or just updated fields ?
+  User.updateOne(
+    { email: req.user.email },
+    { firstname, lastname, username, email }
+  ).then(() => {
+    User.findOne({ email }).then((data) => {
+      if (data) {
+        console.log({ data });
+
+        res.json({
+          result: true,
+          newFirstname: data.firstname,
+          newLastname: data.lastname,
+          newUsername: data.username,
+          newEmail: data.email,
+        });
+      } else {
+        res.json({ result: false, error: "Update failure" });
+      }
+    });
+  });
 });
 
 module.exports = router;
