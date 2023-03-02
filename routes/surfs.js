@@ -16,6 +16,8 @@ router.post("/surfs", (req, res) => {
     latitude,
     longitude,
     availabilities,
+    rating,
+    deposit
   } = req.body;
   if (!owner || !type) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -32,15 +34,28 @@ router.post("/surfs", (req, res) => {
     latitude,
     longitude,
     availabilities,
+    rating,
+    deposit
   });
   newSurf.save().then(() => {
     res.json({ result: true });
   });
 });
 
+// AFFICHAGE DES SURFS //
 /* GET all surfs listing */
 router.get("/", (req, res) => {
   Surf.find().then((data) => {
+    res.json({ surfs: data });
+  });
+});
+
+/* GET all surfs listing for a specific user */
+router.post("/user", (req, res) => {
+  Surf.find({
+    owner: req.body.owner
+  })
+  .then((data) => {
     res.json({ surfs: data });
   });
 });
@@ -64,13 +79,9 @@ router.post("/", (req, res) => {
   );
 });*/
 
-/* Update rating stars*/
-route.put("/rating", (req, res) => {
-  
 
-})
-
-/* PUT Add surfs to favorites for an user */
+/* GESTION DES FAVORIS 
+PUT Add surfs to favorites for an user */
 router.put("/addFavorite/:id", (req, res) => {
   if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -132,12 +143,19 @@ router.get("/favorites", (req, res) => {
 });
 
 
-/* DELETE surfs for an owner*/
-router.delete("/owner/:id", (req, res) => {
-  Surf.deleteOne({ _id: req.params.id }).then((deletedDoc) => {
+
+/* PROFIL UTILISATEUR DELETE DE SURF 
+DELETE surfs for an owner*/
+router.delete("/owner/", (req, res) => {
+  Surf.deleteOne({ _id: req.body.id })
+  .then((deletedDoc) => {
     if (deletedDoc.deletedCount > 0) {
-      // document successfully deleted
-      Surf.find().then((data) => {
+      /* document successfully deleted
+      affichage des surfs restant pour l'utilisateur*/
+      Surf.find({
+        owner: req.body.owner
+      })
+      .then((data) => {
         res.json({ result: true, surfs: data });
       });
     } else {
@@ -148,11 +166,16 @@ router.delete("/owner/:id", (req, res) => {
 
 
 /* DELETE surfs for a tenant*/
-router.delete("/tenant/:id", (req, res) => {
-  Surf.deleteOne({ _id: req.params.id }).then((deletedDoc) => {
+router.delete("/tenant/", (req, res) => {
+  Surf.deleteOne({ _id: req.body.id })
+  .then((deletedDoc) => {
     if (deletedDoc.deletedCount > 0) {
-      // document successfully deleted
-      Surf.find().then((data) => {
+      /* document successfully deleted
+      affichage des surfs restant pour l'utilisateur*/
+      Surf.find({
+        owner: req.body.owner
+      })
+      .then((data) => {
         res.json({ result: true, surfs: data });
       });
     } else {
@@ -162,14 +185,11 @@ router.delete("/tenant/:id", (req, res) => {
 });
 
 
-/*Route POST pour la gestion des recherches de surfs et de filtres */
+/* RECHERCHE ET FILTRE 
+Route POST pour la gestion des recherches de surfs et de filtres */
 router.post("/filter", (req, res) => {
   //On déclare 3 variables afin de savoir si on a une valeur dans type et level
   //si non (en cas de tableau vide) on affiche toutes les clefs.
-  let placeName = req.body.placeName;
-  if (!placeName) {
-    placeName = { $exists: true };
-  }
   let type = req.body.type;
   if (type.length < 1) {
     type = { $exists: true };
@@ -185,7 +205,7 @@ router.post("/filter", (req, res) => {
     level: level,
     dayPrice: { $lte: req.body.maxPrice},
     rating: { $gte: req.body.minRating },
-    placeName: { $regex: new RegExp(placeName, "i") },
+    placeName: { $regex: new RegExp(req.body.placeName, "i") },
     availabilities: req.body.availabilities
     })
 //Si la réponse est true on retour la réponse dans data si false on retourne un result false
@@ -198,6 +218,29 @@ router.post("/filter", (req, res) => {
     });
 });
 
+
+
+/* RATING
+Update rating stars vérifier 
+si côté frontend on peut passer dans le name l'username lors de la création d'un surf*/
+router.put("/rating", (req, res) => {
+  if (!req.body.name) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+/*On cherche le surf en fonction de son nom pour MAJ le rating*/
+  Surf.findOneAndUpdate({ 
+    name: req.body.name,
+    rating: req.body.rating
+  })
+/*On cherche le surf MAJ pour afficher le résultat*/
+    .then(() => {
+    Surf.findOne({ name: req.body.name })
+    .then((data) => {
+    res.json({ result: true, data });
+    });
+  })
+})
 
 
 module.exports = router;
