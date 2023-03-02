@@ -1,4 +1,5 @@
 var express = require("express");
+const { verifyJWT } = require("../lib/leaseLibrary");
 var router = express.Router();
 const Surf = require("../models/surfs");
 const User = require("../models/users");
@@ -18,7 +19,7 @@ router.post("/surfs", (req, res) => {
     longitude,
     availabilities,
     rating,
-    deposit
+    deposit,
   } = req.body;
   if (!owner || !type) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -36,7 +37,7 @@ router.post("/surfs", (req, res) => {
     longitude,
     availabilities,
     rating,
-    deposit
+    deposit,
   });
   newSurf.save().then(() => {
     res.json({ result: true });
@@ -54,9 +55,8 @@ router.get("/", (req, res) => {
 /* GET all surfs listing for a specific user */
 router.post("/user", (req, res) => {
   Surf.find({
-    owner: req.body.owner
-  })
-  .then((data) => {
+    owner: req.body.owner,
+  }).then((data) => {
     res.json({ surfs: data });
   });
 });
@@ -80,33 +80,56 @@ router.post("/", (req, res) => {
   );
 });*/
 
-
 /* GESTION DES FAVORIS 
 PUT Add surfs to favorites for an user */
-router.put("/addFavorite/:id", (req, res) => {
+router.put("/addFavorite/:id", verifyJWT, (req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
   if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
 
-  User.findOne({ username: req.body.username, favorites: req.params.id }).then(
-    (data) => {
-      if (!data) {
+  User.findOne({ email })
+    .populate("favorites")
+    .then((data) => {
+      if (data.favorites.find((surf) => surf._id == req.params.id)) {
+        console.log("surf déjà présent dans favoris");
+
         User.findOneAndUpdate(
-          { username: req.body.username },
-          { $push: { favorites: req.params.id } }
-        ).then(() => {
-          User.findOne({ username: req.body.username })
+          { email },
+          {
+            $pull: {
+              favorites: req.params.id,
+            },
+          }
+        ).then(() =>
+          User.findOne({ email })
             .populate("favorites")
-            .then((data) => {
-              res.json({ result: true, data });
-            });
-        });
+            .then((updatedUser) =>
+              res.json({ result: true, data: updatedUser.favorites })
+            )
+        );
       } else {
-        res.json({ result: false, error: "favorite already added" });
+        console.log("surf non présent dans favoris");
+        User.findOneAndUpdate(
+          { email },
+          {
+            $push: {
+              favorites: req.params.id,
+            },
+          }
+        ).then(() =>
+          User.findOne({ email })
+            .populate("favorites")
+            .then((updatedUser) =>
+              res.json({ result: true, data: updatedUser.favorites })
+            )
+        );
       }
-    }
-  );
+    });
 });
 
 /* DELETE/UPDATE surfs from favorites for an user */
@@ -119,16 +142,14 @@ router.delete("/removeFavorite/:id", (req, res) => {
   User.findOneAndUpdate(
     { username: req.body.username },
     { $pull: { favorites: req.params.id } }
-    )
-    .then(() => {
-      User.findOne({ username: req.body.username })
-        .populate("favorites")
-        .then((data) => {
-          res.json({ result: true, data });
-        });
-    });
+  ).then(() => {
+    User.findOne({ username: req.body.username })
+      .populate("favorites")
+      .then((data) => {
+        res.json({ result: true, data });
+      });
   });
-
+});
 
 // Get all surfs listing from favorites for an user
 router.get("/favorites", (req, res) => {
@@ -143,20 +164,16 @@ router.get("/favorites", (req, res) => {
     });
 });
 
-
-
 /* PROFIL UTILISATEUR DELETE DE SURF 
 DELETE surfs for an owner*/
 router.delete("/owner/", (req, res) => {
-  Surf.deleteOne({ _id: req.body.id })
-  .then((deletedDoc) => {
+  Surf.deleteOne({ _id: req.body.id }).then((deletedDoc) => {
     if (deletedDoc.deletedCount > 0) {
       /* document successfully deleted
       affichage des surfs restant pour l'utilisateur*/
       Surf.find({
-        owner: req.body.owner
-      })
-      .then((data) => {
+        owner: req.body.owner,
+      }).then((data) => {
         res.json({ result: true, surfs: data });
       });
     } else {
@@ -164,19 +181,16 @@ router.delete("/owner/", (req, res) => {
     }
   });
 });
-
 
 /* DELETE surfs for a tenant*/
 router.delete("/tenant/", (req, res) => {
-  Surf.deleteOne({ _id: req.body.id })
-  .then((deletedDoc) => {
+  Surf.deleteOne({ _id: req.body.id }).then((deletedDoc) => {
     if (deletedDoc.deletedCount > 0) {
       /* document successfully deleted
       affichage des surfs restant pour l'utilisateur*/
       Surf.find({
-        owner: req.body.owner
-      })
-      .then((data) => {
+        owner: req.body.owner,
+      }).then((data) => {
         res.json({ result: true, surfs: data });
       });
     } else {
@@ -184,7 +198,6 @@ router.delete("/tenant/", (req, res) => {
     }
   });
 });
-
 
 /* RECHERCHE ET FILTRE 
 Route POST pour la gestion des recherches de surfs et de filtres */
@@ -198,18 +211,18 @@ router.post("/filter", (req, res) => {
   let level = req.body.level;
   if (level.length < 1) {
     level = { $exists: true };
-  }   
-    //On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
-    Surf.find({
+  }
+  //On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
+  Surf.find({
     type: type,
     level: level,
-    dayPrice: { $lte: req.body.maxPrice},
+    dayPrice: { $lte: req.body.maxPrice },
     rating: { $gte: req.body.minRating },
-    placeName: { $regex: new RegExp(req.body.placeName, "i") },    
-    })
+    placeName: { $regex: new RegExp(req.body.placeName, "i") },
+  })
     //Si la réponse est true on retourne on vérifier la disponibilité
-    .then((data) => {     
-      if (data) {  
+    .then((data) => {
+      if (data) {
         //Si une date est renvoyée on vérifier la disponibilité avec la fonction dateRangeOverlaps
         if (req.body.availabilities.startDate) {
           let availableSurfs = [];
@@ -219,7 +232,7 @@ router.post("/filter", (req, res) => {
                 availableSurfs.push(surf);
               }
             }
-          }  
+          }
           res.json({ data: availableSurfs });
         } else {
           res.json({ data });
@@ -230,8 +243,6 @@ router.post("/filter", (req, res) => {
     });
 });
 
-
-
 /* RATING
 Update rating stars vérifier 
 si côté frontend on peut passer dans le name l'username lors de la création d'un surf*/
@@ -240,19 +251,17 @@ router.put("/rating", (req, res) => {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
-/*On cherche le surf en fonction de son nom pour MAJ le rating*/
-  Surf.findOneAndUpdate({ 
+  /*On cherche le surf en fonction de son nom pour MAJ le rating*/
+  Surf.findOneAndUpdate({
     name: req.body.name,
-    rating: req.body.rating
+    rating: req.body.rating,
   })
-/*On cherche le surf MAJ pour afficher le résultat*/
+    /*On cherche le surf MAJ pour afficher le résultat*/
     .then(() => {
-    Surf.findOne({ name: req.body.name })
-    .then((data) => {
-    res.json({ result: true, data });
+      Surf.findOne({ name: req.body.name }).then((data) => {
+        res.json({ result: true, data });
+      });
     });
-  })
-})
-
+});
 
 module.exports = router;

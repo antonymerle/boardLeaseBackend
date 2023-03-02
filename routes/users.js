@@ -5,31 +5,10 @@ const bcrypt = require("bcrypt");
 const { googleAuthVerify } = require("../lib/leaseLibrary");
 const jwt = require("jsonwebtoken");
 const secretKey = process.env.JWT_SECRET;
+const { verifyJWT } = require("../lib/leaseLibrary");
 
 require("../models/connection");
 const User = require("../models/users");
-
-const verifyJWT = (req, res, next) => {
-  // Get the token from the request headers
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  // Verify the token using the secret key
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // Add the decoded user object to the request object for future use
-    req.user = decoded;
-
-    next();
-  });
-};
 
 /**
  * @name POST: users/signup
