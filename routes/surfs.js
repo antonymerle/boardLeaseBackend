@@ -158,22 +158,20 @@ router.delete("/tenant/:id", (req, res) => {
 
 /*Route POST pour la gestion des recherches de surfs et de filtres */
 router.post("/filter", (req, res) => {
-//On vérifie si placename et availavilities sont bien renseignés
-  const { placeName, availabilities } = req.body;
+  //On déclare 3 variables afin de savoir si on a une valeur dans type et level
+  //si non (en cas de tableau vide) on affiche toutes les clefs.
+  let placeName = req.body.placeName;
   if (!placeName) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+    placeName = { $exists: true };
   }
-//On déclare 2 variables afin de savoir si on a une valeur dans type et level 
-//si non (en cas de tableau vide) on affiche toutes les clefs.
   let type = req.body.type;
-    if (type.length < 1) {
-      type = { $exists: true };
-    }
-    let level = req.body.level;
-    if (level.length < 1) {
-      level = { $exists: true };
-    }
+  if (type.length < 1) {
+    type = { $exists: true };
+  }
+  let level = req.body.level;
+  if (level.length < 1) {
+    level = { $exists: true };
+  } 
   console.log(req.body);
 //On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
     Surf.find({
@@ -181,7 +179,8 @@ router.post("/filter", (req, res) => {
     level: level,
     dayPrice: { $lte: req.body.maxPrice},
     rating: { $gte: req.body.minRating },
-    placeName: { $regex: new RegExp(placeName, "i") }
+    placeName: { $regex: new RegExp(placeName, "i") },
+    availabilities: req.body.availabilities
     })
 //Si la réponse est true on retour la réponse dans data si false on retourne un result false
     .then((data) => {
@@ -192,6 +191,5 @@ router.post("/filter", (req, res) => {
       }
     });
 });
-
 
 module.exports = router;
