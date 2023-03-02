@@ -13,7 +13,6 @@ const userSchema = mongoose.Schema({
   username: String,
   email: String,
   password: String,
-  token: String,
   DOB: Date,
   address: addressSchema,
   phone: String,

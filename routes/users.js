@@ -3,9 +3,33 @@ var router = express.Router();
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
 const { googleAuthVerify } = require("../lib/leaseLibrary");
+const jwt = require("jsonwebtoken");
+const secretKey = process.env.JWT_SECRET;
 
 require("../models/connection");
 const User = require("../models/users");
+
+const verifyJWT = (req, res, next) => {
+  // Get the token from the request headers
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // Verify the token using the secret key
+  jwt.verify(token, secretKey, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Add the decoded user object to the request object for future use
+    req.user = decoded;
+
+    next();
+  });
+};
 
 /**
  * @name POST: users/signup
@@ -56,7 +80,11 @@ router.post("/signup", async (req, res) => {
         error: "google connect failed to authenticate user",
       });
   } else if (authMethod === "classic") {
-    const { firstname, lastname, username, email, password } = req.body;
+    firstname = req.body.firstname;
+    lastname = req.body.lastname;
+    username = req.body.username;
+    email = req.body.email;
+    password = req.body.password;
 
     if (!firstname || !lastname || !username || !email || !password) {
       return res.json({ result: false, error: "Missing or empty fields" });
@@ -66,29 +94,44 @@ router.post("/signup", async (req, res) => {
   // We have all the necessary data, now let's check if user has not already been registered
   User.findOne({ email }).then((data) => {
     if (data === null) {
-      const token = uid2(32);
-      const newUser = new User({
+      // const token = uid2(32);
+      // console.log(password);
+
+      // const newUser = new User({
+      //   firstname,
+      //   lastname,
+      //   username,
+      //   email,
+      //   password:
+      //     authMethod === "classic" ? bcrypt.hashSync(password, 10) : null,
+      //   // token,
+      //   favorites: [],
+      // });
+
+      // a plain object is needed for jwt.sign() method
+      const newUser = {
+        authMethod,
+        firstname,
+        lastname,
+        username,
+        email,
+        favorites: [],
+      };
+
+      const jwtToken = jwt.sign(newUser, secretKey, { expiresIn: "1y" });
+
+      const newUserDocument = new User({
+        authMethod,
         firstname,
         lastname,
         username,
         email,
         password:
           authMethod === "classic" ? bcrypt.hashSync(password, 10) : null,
-        token,
         favorites: [],
       });
-
-      newUser.save().then(() => {
-        res.json({
-          result: true,
-          authMethod, // to handle lougout method on the frontend TODO: add it on redux
-          token,
-          firstname,
-          lastname,
-          username,
-          email,
-          favorites: [],
-        });
+      newUserDocument.save().then(() => {
+        res.json({ jwtToken });
       });
     } else {
       // User already exists in database
@@ -166,16 +209,27 @@ router.post("/signin", async (req, res) => {
           bcrypt.compareSync(password, data.password)) ||
         authMethod === "googleConnect"
       ) {
-        res.json({
-          result: true,
-          authMethod, // to handle lougout method on the frontend TODO: add it on redux
-          token: data.token,
+        const loggedUser = {
+          authMethod,
           email,
           firstname: data.firstname,
           lastname: data.lastname,
           username: data.username,
-          favorites: data.favorites,
-        });
+          favorites: data.favorites, // to handle lougout method on the frontend TODO: add it on redux
+        };
+
+        const jwtToken = jwt.sign(loggedUser, secretKey, { expiresIn: "1y" });
+        res.json({ jwtToken });
+        // res.json({
+        //   result: true,
+        //   authMethod, // to handle lougout method on the frontend TODO: add it on redux
+        //   token: data.token,
+        //   email,
+        //   firstname: data.firstname,
+        //   lastname: data.lastname,
+        //   username: data.username,
+        //   favorites: data.favorites,
+        // });
       } else {
         res.json({ result: false, error: "Wrong password." });
       }
