@@ -108,6 +108,7 @@ router.post("/signup", async (req, res) => {
       //   favorites: [],
       // });
 
+      // a plain object is needed for jwt.sign() method
       const newUser = {
         authMethod,
         firstname,
