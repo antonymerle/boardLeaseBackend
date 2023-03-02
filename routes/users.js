@@ -148,6 +148,7 @@ router.post("/signup", async (req, res) => {
  */
 router.post("/signin", async (req, res) => {
   const { authMethod, googleCredentialResponse } = req.body;
+  console.log(req.user);
 
   // top level user data variables
   // we will assign them later, depending on the auth method
@@ -238,59 +239,41 @@ router.post("/signin", async (req, res) => {
 
 /**
  * @name PUT: users
- * @desc Route serving signin form.
- * @param {{token: String}} - JSON Web Token
- * @returns {{result: Boolean, jwtToken: String | null, error: String | null}}
+ * @desc Route serving profile page to modify the user personal informations.
+ * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
-router.post("/", verifyJWT, (req, res) => {
-  const { token } = req.body;
 
-  if (!token) {
-    return res.json({ result: false, error: "Token missing." });
+router.put("/", verifyJWT, (req, res) => {
+  const { firstname, lastname, username, email } = req.body;
+  if (!firstname && !lastname && !username && !email) {
+    return res.json({ result: false, error: "Missing or empty fields." });
   }
+  // console.log(firstname, lastname, username);
 
-  // We have all the necessary data, now let's check if user is in DB
-  User.findOne({
-    email: email,
-  })
-    .populate("favorites")
-    .then((data) => {
-      console.log(data);
+  const user = req.user;
+  console.log(user);
 
-      if (!data) {
-        res.json({ result: false, error: "User not found" });
-        return;
-      } else if (
-        // no need for password check if user is google authenticated
-        (authMethod === "classic" &&
-          bcrypt.compareSync(password, data.password)) ||
-        authMethod === "googleConnect"
-      ) {
-        const loggedUser = {
-          authMethod,
-          email,
-          firstname: data.firstname,
-          lastname: data.lastname,
-          username: data.username,
-          favorites: data.favorites, // to handle lougout method on the frontend TODO: add it on redux
-        };
+  // TODO : send back new JWT or just updated fields ?
+  User.updateOne(
+    { email: req.user.email },
+    { firstname, lastname, username, email }
+  ).then(() => {
+    User.findOne({ email }).then((data) => {
+      if (data) {
+        console.log({ data });
 
-        const jwtToken = jwt.sign(loggedUser, secretKey, { expiresIn: "1y" });
-        res.json({ jwtToken });
-        // res.json({
-        //   result: true,
-        //   authMethod, // to handle lougout method on the frontend TODO: add it on redux
-        //   token: data.token,
-        //   email,
-        //   firstname: data.firstname,
-        //   lastname: data.lastname,
-        //   username: data.username,
-        //   favorites: data.favorites,
-        // });
+        res.json({
+          result: true,
+          newFirstname: data.firstname,
+          newLastname: data.lastname,
+          newUsername: data.username,
+          newEmail: data.email,
+        });
       } else {
-        res.json({ result: false, error: "Wrong password." });
+        res.json({ result: false, error: "Update failure" });
       }
     });
+  });
 });
 
 module.exports = router;
