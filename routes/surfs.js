@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const Surf = require("../models/surfs");
 const User = require("../models/users");
+const { dateRangeOverlaps } = require("../lib/leaseLibrary");
 
 /* POST surf */
 router.post("/surfs", (req, res) => {
@@ -197,21 +198,32 @@ router.post("/filter", (req, res) => {
   let level = req.body.level;
   if (level.length < 1) {
     level = { $exists: true };
-  } 
-  console.log(req.body);
-//On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
+  }   
+    //On cherche dans la collection Surf les planches qui correspondent aux filtres appliqués
     Surf.find({
     type: type,
     level: level,
     dayPrice: { $lte: req.body.maxPrice},
     rating: { $gte: req.body.minRating },
-    placeName: { $regex: new RegExp(req.body.placeName, "i") },
-    availabilities: req.body.availabilities
+    placeName: { $regex: new RegExp(req.body.placeName, "i") },    
     })
-//Si la réponse est true on retour la réponse dans data si false on retourne un result false
-    .then((data) => {
-      if (data) {
-        res.json({data});
+    //Si la réponse est true on retourne on vérifier la disponibilité
+    .then((data) => {     
+      if (data) {  
+        //Si une date est renvoyée on vérifier la disponibilité avec la fonction dateRangeOverlaps
+        if (req.body.availabilities.startDate) {
+          let availableSurfs = [];
+          for (let surf of data) {
+            for (let dateRange of surf.availabilities) {
+              if (dateRangeOverlaps(req.body.availabilities, dateRange)) {
+                availableSurfs.push(surf);
+              }
+            }
+          }  
+          res.json({ data: availableSurfs });
+        } else {
+          res.json({ data });
+        }
       } else {
         res.json({ result: false, error: "not found" });
       }
