@@ -6,7 +6,11 @@ const User = require("../models/users");
 const { dateRangeOverlaps } = require("../lib/leaseLibrary");
 
 /* POST surf */
-router.post("/surfs", (req, res) => {
+router.post("/surfs", verifyJWT,(req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
   const {
     owner,
     type,
@@ -21,10 +25,17 @@ router.post("/surfs", (req, res) => {
     rating,
     deposit,
   } = req.body;
-  if (!owner || !type) {
+
+
+  if (!owner || !type || !name || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
+
+  User.findOne({ email })
+  .then((data) => {
+  if (data) {
+
   const newSurf = new Surf({
     owner,
     type,
@@ -42,6 +53,10 @@ router.post("/surfs", (req, res) => {
   newSurf.save().then(() => {
     res.json({ result: true });
   });
+  } else {
+    res.json({ result: false, error : "user not found"});
+  }
+  })
 });
 
 // AFFICHAGE DES SURFS //
@@ -52,36 +67,8 @@ router.get("/", (req, res) => {
   });
 });
 
-/* GET all surfs listing for a specific user */
-router.post("/user", (req, res) => {
-  Surf.find({
-    owner: req.body.owner,
-  }).then((data) => {
-    res.json({ surfs: data });
-  });
-});
-
-/* POST all surfs for a place and dates 
-A SUPPRIMER car nous avons la route recherche filtre ?
-router.post("/", (req, res) => {
-  const { placeName, availabilities } = req.body;
-  if (!placeName) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
-  }
-  Surf.find({ placeName: { $regex: new RegExp(placeName, "i") } })
-  .then((data) => {
-      if (data.length > 0) {
-        res.json({ result: true, surfs: data });
-      } else {
-        res.json({ result: false, error: "No surf found" });
-      }
-    }
-  );
-});*/
-
 /* GESTION DES FAVORIS 
-PUT Add surfs to favorites for an user */
+PUT Add / Remove surfs favorites for an user */
 router.put("/addFavorite/:id", verifyJWT, (req, res) => {
   const user = req.user;
   console.log(user);
@@ -132,71 +119,21 @@ router.put("/addFavorite/:id", verifyJWT, (req, res) => {
     });
 });
 
-/* DELETE/UPDATE surfs from favorites for an user */
-router.delete("/removeFavorite/:id", (req, res) => {
-  if (!req.params.id) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
-  }
-
-  User.findOneAndUpdate(
-    { username: req.body.username },
-    { $pull: { favorites: req.params.id } }
-  ).then(() => {
-    User.findOne({ username: req.body.username })
-      .populate("favorites")
-      .then((data) => {
-        res.json({ result: true, data });
-      });
-  });
-});
-
 // Get all surfs listing from favorites for an user
-router.get("/favorites", (req, res) => {
-  User.findOne({ username: req.body.username })
+router.get("/favorites", verifyJWT, (req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
+  User.findOne({ email })
     .populate("favorites")
-    .then((data) => {
-      if (data) {
-        res.json({ data });
+    .then((favoritesDb) => {
+      if (favoritesDb) {
+        res.json({ data : favoritesDb.favorites });
       } else {
         res.json({ result: false, error: "Favorites not found" });
       }
     });
-});
-
-/* PROFIL UTILISATEUR DELETE DE SURF 
-DELETE surfs for an owner*/
-router.delete("/owner/", (req, res) => {
-  Surf.deleteOne({ _id: req.body.id }).then((deletedDoc) => {
-    if (deletedDoc.deletedCount > 0) {
-      /* document successfully deleted
-      affichage des surfs restant pour l'utilisateur*/
-      Surf.find({
-        owner: req.body.owner,
-      }).then((data) => {
-        res.json({ result: true, surfs: data });
-      });
-    } else {
-      res.json({ result: false, error: "Surf not found" });
-    }
-  });
-});
-
-/* DELETE surfs for a tenant*/
-router.delete("/tenant/", (req, res) => {
-  Surf.deleteOne({ _id: req.body.id }).then((deletedDoc) => {
-    if (deletedDoc.deletedCount > 0) {
-      /* document successfully deleted
-      affichage des surfs restant pour l'utilisateur*/
-      Surf.find({
-        owner: req.body.owner,
-      }).then((data) => {
-        res.json({ result: true, surfs: data });
-      });
-    } else {
-      res.json({ result: false, error: "Surf not found" });
-    }
-  });
 });
 
 /* RECHERCHE ET FILTRE 
@@ -244,24 +181,51 @@ router.post("/filter", (req, res) => {
 });
 
 /* RATING
-Update rating stars vérifier 
-si côté frontend on peut passer dans le name l'username lors de la création d'un surf*/
-router.put("/rating", (req, res) => {
-  if (!req.body.name) {
+Update rating stars*/
+router.put("/rating/:id", verifyJWT, (req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
+  if (!req.params.id || !req.body.rating) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
+
+  User.findOne({ email })
+  .then((data) => {
+  if (data) {
   /*On cherche le surf en fonction de son nom pour MAJ le rating*/
   Surf.findOneAndUpdate({
-    name: req.body.name,
+    _id: req.params.id,
     rating: req.body.rating,
   })
     /*On cherche le surf MAJ pour afficher le résultat*/
-    .then(() => {
-      Surf.findOne({ name: req.body.name }).then((data) => {
-        res.json({ result: true, data });
-      });
+    .then((majRating) => {
+        res.json({ result: true, majRating });
     });
+  } else {
+    res.json({ result: false, error : "user not found"});
+  }
+  })
 });
+
+/* Renvoyer un surf par rapport a son ID*/
+router.get("/:id",(req, res) => {
+
+  if (!req.params.id) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  Surf.findOne({ _id : req.params.id })
+    .then((data) => {
+    if (data) {
+    res.json({ result: true, data })
+    } else {
+    res.json({ result: false, error: "No surf found" })
+    }
+});
+})
 
 module.exports = router;
