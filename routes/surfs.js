@@ -53,11 +53,23 @@ router.get("/", (req, res) => {
 });
 
 /* GET all surfs listing for a specific user */
-router.post("/user", (req, res) => {
-  Surf.find({
-    owner: req.body.owner,
-  }).then((data) => {
-    res.json({ surfs: data });
+router.post("/user", verifyJWT,(req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
+  Surf.find()
+  .populate({
+  path : 'owner',
+  match: {
+    email : email
+  }
+  })
+  .then((data) => {
+    res.json({ data})
+    //const dataEmail = data.filter(data => data.owner.email = email)
+   
+ 
   });
 });
 
@@ -81,7 +93,7 @@ router.post("/", (req, res) => {
 });*/
 
 /* GESTION DES FAVORIS 
-PUT Add surfs to favorites for an user */
+PUT Add / Remove surfs favorites for an user */
 router.put("/addFavorite/:id", verifyJWT, (req, res) => {
   const user = req.user;
   console.log(user);
@@ -132,32 +144,17 @@ router.put("/addFavorite/:id", verifyJWT, (req, res) => {
     });
 });
 
-/* DELETE/UPDATE surfs from favorites for an user */
-router.delete("/removeFavorite/:id", (req, res) => {
-  if (!req.params.id) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
-  }
-
-  User.findOneAndUpdate(
-    { username: req.body.username },
-    { $pull: { favorites: req.params.id } }
-  ).then(() => {
-    User.findOne({ username: req.body.username })
-      .populate("favorites")
-      .then((data) => {
-        res.json({ result: true, data });
-      });
-  });
-});
-
 // Get all surfs listing from favorites for an user
-router.get("/favorites", (req, res) => {
-  User.findOne({ username: req.body.username })
+router.get("/favorites", verifyJWT, (req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
+  User.findOne({ email })
     .populate("favorites")
-    .then((data) => {
-      if (data) {
-        res.json({ data });
+    .then((favoritesDb) => {
+      if (favoritesDb) {
+        res.json({ data : favoritesDb.favorites });
       } else {
         res.json({ result: false, error: "Favorites not found" });
       }
@@ -244,13 +241,17 @@ router.post("/filter", (req, res) => {
 });
 
 /* RATING
-Update rating stars vérifier 
-si côté frontend on peut passer dans le name l'username lors de la création d'un surf*/
-router.put("/rating", (req, res) => {
-  if (!req.body.name) {
+Update rating stars*/
+router.put("/rating", verifyJWT, (req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
+  if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
+
   /*On cherche le surf en fonction de son nom pour MAJ le rating*/
   Surf.findOneAndUpdate({
     name: req.body.name,
