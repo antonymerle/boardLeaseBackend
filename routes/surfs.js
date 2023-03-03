@@ -211,7 +211,7 @@ router.put("/rating/:id", verifyJWT, (req, res) => {
 });
 
 /* Renvoyer un surf par rapport a son ID*/
-router.post("/:id",(req, res) => {
+router.get("/:id",(req, res) => {
 
   if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -227,6 +227,5 @@ router.post("/:id",(req, res) => {
     }
 });
 })
-
 
 module.exports = router;
