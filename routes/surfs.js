@@ -67,24 +67,6 @@ router.get("/", (req, res) => {
   });
 });
 
-/* Renvoyer un surf par rapport a son ID*/
-router.post("/",(req, res) => {
-
-  if (!req.params.id) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
-  }
-
-  Surf.findOne({ _id : req.params.id })
-    .then((data) => {
-    if (data) {
-    res.json({ result: true, data })
-    } else {
-    res.json({ result: false, error: "No surf found" })
-    }
-});
-})
-
 /* GESTION DES FAVORIS 
 PUT Add / Remove surfs favorites for an user */
 router.put("/addFavorite/:id", verifyJWT, (req, res) => {
@@ -154,7 +136,6 @@ router.get("/favorites", verifyJWT, (req, res) => {
     });
 });
 
-
 /* RECHERCHE ET FILTRE 
 Route POST pour la gestion des recherches de surfs et de filtres */
 router.post("/filter", (req, res) => {
@@ -199,7 +180,6 @@ router.post("/filter", (req, res) => {
     });
 });
 
-
 /* RATING
 Update rating stars*/
 router.put("/rating/:id", verifyJWT, (req, res) => {
@@ -229,5 +209,24 @@ router.put("/rating/:id", verifyJWT, (req, res) => {
   }
   })
 });
+
+/* Renvoyer un surf par rapport a son ID*/
+router.post("/:id",(req, res) => {
+
+  if (!req.params.id) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  Surf.findOne({ _id : req.params.id })
+    .then((data) => {
+    if (data) {
+    res.json({ result: true, data })
+    } else {
+    res.json({ result: false, error: "No surf found" })
+    }
+});
+})
+
 
 module.exports = router;
