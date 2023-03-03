@@ -68,7 +68,7 @@ router.get("/", (req, res) => {
 });
 
 /* Renvoyer un surf par rapport a son ID*/
-router.post("/:id",(req, res) => {
+router.post("/",(req, res) => {
 
   if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
