@@ -24,6 +24,37 @@ const Surf = require("../models/surfs");
  * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
 router.post("/", verifyJWT, (req, res) => {
+  const user = req.user;
+  console.log(user);
+  const { email } = req.user;
+
+  if (
+    !req.body.startDate ||
+    !req.body.endDate ||
+    !req.body.surfId ||
+    !req.body.placeName ||
+    !req.body.ownerId ||
+    !req.body.tenantId ||
+    !req.body.isPaid ||
+    !req.body.transactionId ||
+    !req.body.paymentMode
+  ) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  const {
+    startDate,
+    endDate,
+    surfId,
+    placeName,
+    ownerId,
+    tenantId,
+    isPaid,
+    transactionId,
+    paymentMode,
+  } = req.body;
+
   /*
   la route booking :
     1. authentifie le tenant via le JWT
