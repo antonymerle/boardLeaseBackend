@@ -1,11 +1,15 @@
 var express = require("express");
 var router = express.Router();
 
-const { verifyJWT } = require("../lib/leaseLibrary");
+const { verifyJWT, dateRangeSplitter } = require("../lib/leaseLibrary");
 
 require("../models/connection");
 const User = require("../models/users");
 const Surf = require("../models/surfs");
+const Booking = require("../models/bookings");
+
+const { checkAvailabibility } = require("../lib/leaseLibrary");
+const uid2 = require("uid2"); // generate fake transaction ID;
 
 /**
  * @name POST: /bookings
@@ -23,9 +27,9 @@ const Surf = require("../models/surfs");
  * paymentMode: String }}
  * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
-router.post("/", verifyJWT, (req, res) => {
+router.post("/", verifyJWT, async (req, res) => {
   const user = req.user;
-  console.log(user);
+  // console.log(user);
   const { email } = req.user;
 
   if (
@@ -33,6 +37,7 @@ router.post("/", verifyJWT, (req, res) => {
     !req.body.endDate ||
     !req.body.surfId ||
     !req.body.placeName ||
+    !req.body.totalPrice ||
     !req.body.ownerId ||
     !req.body.tenantId ||
     !req.body.isPaid ||
@@ -48,6 +53,7 @@ router.post("/", verifyJWT, (req, res) => {
     endDate,
     surfId,
     placeName,
+    totalPrice,
     ownerId,
     tenantId,
     isPaid,
@@ -55,17 +61,91 @@ router.post("/", verifyJWT, (req, res) => {
     paymentMode,
   } = req.body;
 
-  Surf.findById(surfId).then((surf) => console.log(surf));
+  try {
+    const surf = await Surf.findById(surfId);
+    console.log({ surf });
+    // 1. check if tenant's dateRange matches with any of the surf availabilities
+    const availableDateRangeIndex = checkAvailabibility(surf.availabilities, {
+      startDate,
+      endDate,
+    });
+    console.log({ availableDateRangeIndex });
+
+    // 2. found matching dateRange we need to substract from
+    if (availableDateRangeIndex >= 0) {
+      // deduct reservation dateRange from the matching availabily dateRange
+      // The result is one or two lesser dateRange(s).
+      const dateRangeSplit = dateRangeSplitter(
+        surf.availabilities[availableDateRangeIndex],
+        {
+          startDate,
+          endDate,
+        }
+      );
+      // 3. now we recreate a new state : an updated array of availabilities for the requested surf
+
+      // 3.1. removing matching dateRange from the surf current availabilities and
+      const surfRemainingDateRanges = surf.availabilities.filter(
+        (dr, i) => i !== availableDateRangeIndex
+      );
+      console.log({ InitialAvailabilities: surf.availabilities });
+      console.log({ surfRemainingDateRanges });
+
+      // 3.2. replacing it with one or two lesser dateRanges
+      const newAvailabilities = [
+        ...surfRemainingDateRanges,
+        ...dateRangeSplit,
+      ].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+      console.log({ newAvailabilities });
+
+      // 3.3 We have an updated array of availabilities to query DB with
+      Surf.findByIdAndUpdate(surfId, {
+        availabilities: newAvailabilities,
+      })
+        .then(() => Surf.findById(surfId))
+        .then((updatedSurf) => {
+          const transactionId = uid2(32);
+          const newBooking = new Booking({
+            tenant: tenantId,
+            owner: updatedSurf.owner,
+            placeName: updatedSurf.placeName,
+            latitude: updatedSurf.latitude,
+            longitude: updatedSurf.longitude,
+            surf: surfId,
+            startDate,
+            endDate,
+            transactionId,
+            paymentDate: Date().now(),
+            paymentMode: "creditCard",
+            paymentAmount: totalPrice,
+            isPaid,
+          });
+
+          newBooking.save().then(() =>
+            Booking.findOne({ transactionId }).then((transactionDocument) => {
+              return res.json({ result: true, data: transactionDocument });
+            })
+          );
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.json({ result: false, error });
+  }
+
+  // TODO : what happens if the dateRange is bigger
 
   /*
   la route booking :
     1. authentifie le tenant via le JWT - DONE
-    2. identifie le surf depuis fullfilledBooking (state redux)
-    3. vérifie que le surf est bien disponible aux dates demandées
-    4. vérifie que le paiement est bien réalisé
-    5. retire la plage de réservation des disponibilités du surf qui a été réservé
-    6. remplit le document booking tel que décrit dans le schéma BDD
+    2. identifie le surf depuis fullfilledBooking (state redux) - TODO Frontend
+    3. vérifie que le surf est bien disponible aux dates demandées - DONE
+    4. vérifie que le paiement est bien réalisé - TODO Frontend
+    5. retire la plage de réservation des disponibilités du surf qui a été réservé - DONE
+    6. remplit le document booking tel que décrit dans le schéma BDD - DONE
   */
+  res.json({ result: false, error: "Something went wrong." });
 });
 
 module.exports = router;
