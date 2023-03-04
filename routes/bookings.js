@@ -82,6 +82,7 @@ router.post("/", verifyJWT, async (req, res) => {
           endDate,
         }
       );
+      // TODO check if empty array or if array with null inside (then, we have to delete the dateRange because it is has been fully reservated)
       // 3. now we recreate a new state : an updated array of availabilities for the requested surf
 
       // 3.1. removing matching dateRange from the surf current availabilities and
