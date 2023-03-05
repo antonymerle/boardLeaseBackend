@@ -18,10 +18,8 @@ const uid2 = require("uid2"); // generate fake transaction ID;
  * surfId: String,
  * startDate: Date,
  * endDate: Date,
- * placeName: String,
  * totalPrice: Number,
  * isPaid: Boolean,
- * transactionId: String,
  * paymentMode: String }}
  * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
@@ -59,11 +57,10 @@ router.post("/", verifyJWT, async (req, res) => {
     startDate,
     endDate,
     surfId,
-    placeName,
     totalPrice,
     isPaid,
-    transactionId,
-    paymentMode,
+    transactionId, // later from frontend if time to do it
+    paymentMode, // later from frontend if time to do it
   } = req.body;
 
   try {
