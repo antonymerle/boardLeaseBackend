@@ -74,7 +74,7 @@ router.post("/", verifyJWT, async (req, res) => {
     // 2. found matching dateRange we need to substract from
     if (availableDateRangeIndex >= 0) {
       // deduct reservation dateRange from the matching availabily dateRange
-      // The result is one or two lesser dateRange(s).
+      // The result is one or two lesser dateRange(s) within boundaries of matching availability
       const dateRangeSplit = dateRangeSplitter(
         surf.availabilities[availableDateRangeIndex],
         {
