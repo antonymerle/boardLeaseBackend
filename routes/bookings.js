@@ -29,6 +29,7 @@ router.post("/", verifyJWT, async (req, res) => {
   const user = req.user;
   // console.log(user);
   const { email } = req.user; // TODO : check if something to do with user document : get tenantID
+  if (!email) return res.json({ result: false, error: "User token missing." });
 
   const tenant = await User.findOne({ email });
   console.log(tenant);
@@ -145,8 +146,6 @@ router.post("/", verifyJWT, async (req, res) => {
     5. retire la plage de réservation des disponibilités du surf qui a été réservé - DONE
     6. remplit le document booking tel que décrit dans le schéma BDD - DONE
   */
-  // res.json({ result: false, error: "Something went wrong." });
-  console.log("END");
 });
 
 module.exports = router;
