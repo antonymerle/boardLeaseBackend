@@ -20,6 +20,7 @@ const uid2 = require("uid2"); // generate fake transaction ID;
  * endDate: Date,
  * totalPrice: Number,
  * isPaid: Boolean,
+ * transactionId: String,
  * paymentMode: String }}
  * @returns {{result: Boolean, token: String | null, error: String | null}}
  */
@@ -85,6 +86,13 @@ router.post("/", verifyJWT, async (req, res) => {
         }
       );
       // TODO check if empty array or if array with null inside (then, we have to delete the dateRange because it is has been fully reservated)
+      if (dateRangeSplit.length === 0) {
+        return res.json({
+          result: false,
+          error: "Wrong tenant dateRange request.",
+        });
+      }
+
       // 3. now we recreate a new state : an updated array of availabilities for the requested surf
 
       // 3.1. removing matching dateRange from the surf current availabilities and
@@ -94,17 +102,20 @@ router.post("/", verifyJWT, async (req, res) => {
       console.log({ InitialAvailabilities: surf.availabilities });
       console.log({ surfRemainingDateRanges });
 
-      // 3.2. replacing it with one or two lesser dateRanges
-      const newAvailabilities = [
+      // 3.2. replacing it with one or two lesser dateRanges (or with nothing if dateRange fully reservated)
+
+      const newSurfAvailabilities = [
         ...surfRemainingDateRanges,
         ...dateRangeSplit,
-      ].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      ]
+        .filter((availability) => availability !== null) // case dateRangeSplit is containing one null element, we have to remove it
+        .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
-      console.log({ newAvailabilities });
+      console.log({ newSurfAvailabilities });
 
-      // 3.3 We have an updated array of availabilities to query DB with
+      // 3.3 We have an updated array of availabilities to update the surf and create a new booking document
       Surf.findByIdAndUpdate(surfId, {
-        availabilities: newAvailabilities,
+        availabilities: newSurfAvailabilities,
       })
         .then(() => Surf.findById(surfId))
         .then((updatedSurf) => {
