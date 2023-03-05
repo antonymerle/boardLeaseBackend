@@ -31,7 +31,7 @@ router.post("/", verifyJWT, async (req, res) => {
     2. identifie le surf depuis fullfilledBooking (state redux) - TODO Frontend
     3. vérifie que le surf est bien disponible aux dates demandées - DONE
     4. vérifie que le paiement est bien réalisé - TODO Frontend
-    5. retire la plage de réservation des disponibilités du surf qui a été réservé - DONE
+    5. retire / transforme la plage de réservation des disponibilités du surf qui a été réservé - DONE
     6. remplit le document booking tel que décrit dans le schéma BDD - DONE
   */
 
@@ -85,7 +85,7 @@ router.post("/", verifyJWT, async (req, res) => {
           endDate,
         }
       );
-      // TODO check if empty array or if array with null inside (then, we have to delete the dateRange because it is has been fully reservated)
+      // check if empty array or if array with null inside (then, we have to delete the dateRange because it is has been fully reservated)
       if (dateRangeSplit.length === 0) {
         return res.json({
           result: false,
