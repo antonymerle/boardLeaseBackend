@@ -30,12 +30,15 @@ const uid2 = require("uid2"); // generate fake transaction ID;
 router.post("/", verifyJWT, async (req, res) => {
   const user = req.user;
   // console.log(user);
-  const { email } = req.user;
+  const { email } = req.user; // TODO : check if something to do with user document : get tenantID
 
+  // To minimize exposure to frontend :
+  // TODO : get tenantID from token
+  // TODO : get ownerID from surf
   if (
+    !req.body.surfId ||
     !req.body.startDate ||
     !req.body.endDate ||
-    !req.body.surfId ||
     !req.body.placeName ||
     !req.body.totalPrice ||
     !req.body.ownerId ||
@@ -44,8 +47,7 @@ router.post("/", verifyJWT, async (req, res) => {
     !req.body.transactionId ||
     !req.body.paymentMode
   ) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+    return res.json({ result: false, error: "Missing or empty fields" });
   }
 
   const {
@@ -117,7 +119,7 @@ router.post("/", verifyJWT, async (req, res) => {
             startDate,
             endDate,
             transactionId,
-            paymentDate: Date().now(),
+            paymentDate: Date.now(),
             paymentMode: "creditCard",
             paymentAmount: totalPrice,
             isPaid,
@@ -146,7 +148,8 @@ router.post("/", verifyJWT, async (req, res) => {
     5. retire la plage de réservation des disponibilités du surf qui a été réservé - DONE
     6. remplit le document booking tel que décrit dans le schéma BDD - DONE
   */
-  res.json({ result: false, error: "Something went wrong." });
+  // res.json({ result: false, error: "Something went wrong." });
+  console.log("END");
 });
 
 module.exports = router;
