@@ -15,13 +15,11 @@ const uid2 = require("uid2"); // generate fake transaction ID;
  * @name POST: /bookings
  * @desc Route serving the booking action from a tenant.
  * @param {{
+ * surfId: String,
  * startDate: Date,
  * endDate: Date,
- * surfId: String,
  * placeName: String,
  * totalPrice: Number,
- * ownerId: String,
- * tenantId: String,
  * isPaid: Boolean,
  * transactionId: String,
  * paymentMode: String }}
@@ -32,17 +30,18 @@ router.post("/", verifyJWT, async (req, res) => {
   // console.log(user);
   const { email } = req.user; // TODO : check if something to do with user document : get tenantID
 
+  const tenant = await User.findOne({ email });
+  console.log(tenant);
+
   // To minimize exposure to frontend :
-  // TODO : get tenantID from token
-  // TODO : get ownerID from surf
+  // DONE : get tenantID from token
+  // DONE : get ownerID from surf
   if (
     !req.body.surfId ||
     !req.body.startDate ||
     !req.body.endDate ||
     !req.body.placeName ||
     !req.body.totalPrice ||
-    !req.body.ownerId ||
-    !req.body.tenantId ||
     !req.body.isPaid ||
     !req.body.transactionId ||
     !req.body.paymentMode
@@ -56,8 +55,6 @@ router.post("/", verifyJWT, async (req, res) => {
     surfId,
     placeName,
     totalPrice,
-    ownerId,
-    tenantId,
     isPaid,
     transactionId,
     paymentMode,
@@ -110,7 +107,7 @@ router.post("/", verifyJWT, async (req, res) => {
         .then((updatedSurf) => {
           const transactionId = uid2(32);
           const newBooking = new Booking({
-            tenant: tenantId,
+            tenant: tenant._id,
             owner: updatedSurf.owner,
             placeName: updatedSurf.placeName,
             latitude: updatedSurf.latitude,
