@@ -4,51 +4,50 @@ var router = express.Router();
 const Surf = require("../models/surfs");
 const User = require("../models/users");
 const { dateRangeOverlaps } = require("../lib/leaseLibrary");
+const uniqid = require('uniqid');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
 
 /* POST surf */
 router.post("/surfs", verifyJWT,(req, res) => {
   const user = req.user;
-  console.log(user);
   const { email } = req.user;
 
   const {
-    owner,
-    type,
-    level,
-    name,
-    dayPrice,
-    pictures,
-    placeName,
+    type, //select sur page "Rent"
+    level, //select sur page "Rent"
+    name, //input sur page "Rent"
+    dayPrice, //select sur page "Rent"
+   // pictures, //upload sur page "Rent"
+    placeName, 
     latitude,
     longitude,
-    availabilities,
-    rating,
-    deposit,
+    availabilities, 
   } = req.body;
 
 
-  if (!owner || !type || !name || !availabilities) {
+  /*if (!owner || !type || !name || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
-  }
+  }*/
 
   User.findOne({ email })
   .then((data) => {
   if (data) {
 
   const newSurf = new Surf({
-    owner,
+    owner: email,
     type,
     level,
     name,
     dayPrice,
-    pictures,
+    pictures : "test",
     placeName,
     latitude,
     longitude,
     availabilities,
-    rating,
-    deposit,
+    rating : 0,
+    deposit : 200,
   });
   newSurf.save().then(() => {
     res.json({ result: true });
@@ -71,7 +70,6 @@ router.get("/", (req, res) => {
 PUT Add / Remove surfs favorites for an user */
 router.put("/addFavorite/:id", verifyJWT, (req, res) => {
   const user = req.user;
-  console.log(user);
   const { email } = req.user;
 
   if (!req.params.id) {
@@ -122,7 +120,6 @@ router.put("/addFavorite/:id", verifyJWT, (req, res) => {
 // Get all surfs listing from favorites for an user
 router.get("/favorites", verifyJWT, (req, res) => {
   const user = req.user;
-  console.log(user);
   const { email } = req.user;
 
   User.findOne({ email })
@@ -184,7 +181,6 @@ router.post("/filter", (req, res) => {
 Update rating stars*/
 router.put("/rating/:id", verifyJWT, (req, res) => {
   const user = req.user;
-  console.log(user);
   const { email } = req.user;
 
   if (!req.params.id || !req.body.rating) {
@@ -227,5 +223,18 @@ router.get("/:id",(req, res) => {
     }
 });
 })
+//Route pour upload une image sur cloudinary
+router.post('/upload', async (req, res) => {
+  const photoPath = `./tmp/${uniqid()}.jpg`;
+  const resultMove = await req.files.photoFromFront.mv(photoPath);
+  
+  if(!resultMove) {
+      const resultCloudinary = await cloudinary.uploader.upload(photoPath);
+      fs.unlinkSync(photoPath);
+      res.json({ result: true, url: resultCloudinary.secure_url });
+  } else {
+      res.json({ result: false, error: resultCopy });
+  }
+});
 
 module.exports = router;
