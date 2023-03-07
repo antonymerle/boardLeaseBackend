@@ -162,9 +162,22 @@ router.get("/", verifyJWT, async (req, res) => {
   console.log(tenant);
 
   try {
-    const tenantBookings = await Booking.find({ tenant: tenant._id });
-    console.log({ tenantBookings });
-    res.json({ result: true, data: tenantBookings });
+    const tenantBookings = await Booking.find({ tenant: tenant._id })
+      .populate("owner")
+      .populate("surf");
+    // console.log({ tenantBookings });
+    const tenantBookingsFiltered = tenantBookings.map((tenantBooking) => {
+      return {
+        owner: tenantBooking.owner.firstname,
+        surfName: tenantBooking.surf.name,
+        surfType: tenantBooking.surf.type,
+        startDate: tenantBooking.startDate,
+        endDate: tenantBooking.endDate,
+      };
+    });
+    // console.log({ tenantBookingsFiltered });
+
+    res.json({ result: true, data: tenantBookingsFiltered });
   } catch (error) {
     console.log(error);
     res.json({ result: false, error });
