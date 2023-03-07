@@ -149,4 +149,26 @@ router.post("/", verifyJWT, async (req, res) => {
   }
 });
 
+/**
+ * @name GET: /bookings
+ * @desc Route returning bookings for a tenant.
+ * @returns {[Object]}
+ */
+router.get("/", verifyJWT, async (req, res) => {
+  const { email } = req.user;
+  if (!email) return res.json({ result: false, error: "User token missing." });
+
+  const tenant = await User.findOne({ email });
+  console.log(tenant);
+
+  try {
+    const tenantBookings = await Booking.find({ tenant: tenant._id });
+    console.log({ tenantBookings });
+    res.json({ result: true, data: tenantBookings });
+  } catch (error) {
+    console.log(error);
+    res.json({ result: false, error });
+  }
+});
+
 module.exports = router;
