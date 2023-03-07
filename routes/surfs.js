@@ -232,13 +232,13 @@ router.post("/upload", async (req, res) => {
 });
 
 /**
- * @name GET: /surfs/ownerName
+ * @name POST: /surfs/ownerName
  * @desc Route returning the name of a surf's owner.
  * @param {{surfId: String}} - surfId
  * @returns {{result: Boolean, data: String | null, error: String | null}}
  */
 
-router.get("/owner/name", async (req, res) => {
+router.post("/owner/name", async (req, res) => {
   console.log(req.body.surfId);
 
   if (!req.body.surfId)
