@@ -4,12 +4,12 @@ var router = express.Router();
 const Surf = require("../models/surfs");
 const User = require("../models/users");
 const { dateRangeOverlaps } = require("../lib/leaseLibrary");
-const uniqid = require('uniqid');
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
+const uniqid = require("uniqid");
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
 
 /* POST surf */
-router.post("/surfs", verifyJWT,(req, res) => {
+router.post("/surfs", verifyJWT, (req, res) => {
   const user = req.user;
   const { email } = req.user;
 
@@ -22,9 +22,8 @@ router.post("/surfs", verifyJWT,(req, res) => {
     placeName, 
     latitude,
     longitude,
-    availabilities, 
+    availabilities,
   } = req.body;
-
 
   /*if (!owner || !type || !name || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -49,14 +48,7 @@ router.post("/surfs", verifyJWT,(req, res) => {
     rating : 0,
     deposit : 200,
   });
-  newSurf.save().then(() => {
-    res.json({ result: true });
-  });
-  } else {
-    res.json({ result: false, error : "user not found"});
-  }
-  })
-});
+}});
 
 // AFFICHAGE DES SURFS //
 /* GET all surfs listing */
@@ -126,7 +118,7 @@ router.get("/favorites", verifyJWT, (req, res) => {
     .populate("favorites")
     .then((favoritesDb) => {
       if (favoritesDb) {
-        res.json({ data : favoritesDb.favorites });
+        res.json({ data: favoritesDb.favorites });
       } else {
         res.json({ result: false, error: "Favorites not found" });
       }
@@ -188,43 +180,40 @@ router.put("/rating/:id", verifyJWT, (req, res) => {
     return;
   }
 
-  User.findOne({ email })
-  .then((data) => {
-  if (data) {
-  /*On cherche le surf en fonction de son nom pour MAJ le rating*/
-  Surf.findOneAndUpdate({
-    _id: req.params.id,
-    rating: req.body.rating,
-  })
-    /*On cherche le surf MAJ pour afficher le résultat*/
-    .then((majRating) => {
-        res.json({ result: true, majRating });
-    });
-  } else {
-    res.json({ result: false, error : "user not found"});
-  }
-  })
+  User.findOne({ email }).then((data) => {
+    if (data) {
+      /*On cherche le surf en fonction de son nom pour MAJ le rating*/
+      Surf.findOneAndUpdate({
+        _id: req.params.id,
+        rating: req.body.rating,
+      })
+        /*On cherche le surf MAJ pour afficher le résultat*/
+        .then((majRating) => {
+          res.json({ result: true, majRating });
+        });
+    } else {
+      res.json({ result: false, error: "user not found" });
+    }
+  });
 });
 
 /* Renvoyer un surf par rapport a son ID*/
-router.get("/:id",(req, res) => {
-
+router.get("/:id", (req, res) => {
   if (!req.params.id) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
 
-  Surf.findOne({ _id : req.params.id })
-    .then((data) => {
+  Surf.findOne({ _id: req.params.id }).then((data) => {
     if (data) {
-    res.json({ result: true, data })
+      res.json({ result: true, data });
     } else {
-    res.json({ result: false, error: "No surf found" })
+      res.json({ result: false, error: "No surf found" });
     }
+  });
 });
-})
 //Route pour upload une image sur cloudinary
-router.post('/upload', async (req, res) => {
+router.post("/upload", async (req, res) => {
   const photoPath = `./tmp/${uniqid()}.jpg`;
   console.log(req.files)
   const resultMove = await req.files.photoFromFront.mv(photoPath);
@@ -235,8 +224,30 @@ console.log(resultMove)
       fs.unlinkSync(photoPath);
       res.json({ result: true, url: resultCloudinary.secure_url });
   } else {
-      res.json({ result: false, error: resultCopy });
+    res.json({ result: false, error: resultCopy });
   }
 });
 
+/**
+ * @name POST: /surfs/ownerName
+ * @desc Route returning the name of a surf's owner.
+ * @param {{surfId: String}} - surfId
+ * @returns {{result: Boolean, data: String | null, error: String | null}}
+ */
+
+router.post("/owner/name", async (req, res) => {
+  console.log(req.body.surfId);
+
+  if (!req.body.surfId)
+    return res.json({ result: false, error: "surfId missing." });
+
+  try {
+    const surf = await Surf.findById(req.body.surfId);
+    const owner = await User.findById(surf.owner);
+    res.json({ result: true, data: owner.firstname });
+  } catch (error) {
+    res.json({ result: false, error });
+  }
+});
+})
 module.exports = router;
