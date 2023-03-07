@@ -8,6 +8,21 @@ const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
+
+// Route qui permet d'afficher tous les surfs pour un ID user
+router.post("/displayPosts", verifyJWT, (req, res) => {
+  const user = req.user;
+  const { email } = req.user;
+
+  User.findOne({ email })
+  .then((data) => {
+  Surf.find({owner : data._id})
+  .then((surfsDb) => {
+    res.json({ surfsDb });
+  })
+  })
+})
+  
 /* POST surf */
 router.post("/surfs", verifyJWT, (req, res) => {
   const user = req.user;
@@ -18,24 +33,24 @@ router.post("/surfs", verifyJWT, (req, res) => {
     level, //select sur page "Rent"
     name, //input sur page "Rent"
     dayPrice, //select sur page "Rent"
-   pictures, //upload sur page "Rent"
+    pictures, //upload sur page "Rent"
     placeName, 
     latitude,
     longitude,
     availabilities,
   } = req.body;
 
-  /*if (!owner || !type || !name || !availabilities) {
+  if (!type || !level || !name || !dayPrice || !pictures || !placeName || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
-  }*/
+  }
 
   User.findOne({ email })
   .then((data) => {
   if (data) {
-
+    const owner = data._id
   const newSurf = new Surf({
-    owner: email,
+    owner: owner,
     type,
     level,
     name,
@@ -48,7 +63,14 @@ router.post("/surfs", verifyJWT, (req, res) => {
     rating : 0,
     deposit : 200,
   });
-}});
+
+  newSurf.save().then(() => {
+    res.json({ result: true });
+  });
+  } else {
+    res.json({ result: false, error : "user not found"});
+  }
+});
 })
 
 // AFFICHAGE DES SURFS //
