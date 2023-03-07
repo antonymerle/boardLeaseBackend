@@ -49,6 +49,7 @@ router.post("/surfs", verifyJWT, (req, res) => {
     deposit : 200,
   });
 }});
+})
 
 // AFFICHAGE DES SURFS //
 /* GET all surfs listing */
@@ -249,5 +250,5 @@ router.post("/owner/name", async (req, res) => {
     res.json({ result: false, error });
   }
 });
-})
+
 module.exports = router;
