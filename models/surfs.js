@@ -6,7 +6,7 @@ const dateSchema = mongoose.Schema({
 });
 
 const surfSchema = mongoose.Schema({
-	owner: String,
+	owner: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
 	type: String,
 	level: String,
 	name: String,
