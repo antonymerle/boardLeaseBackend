@@ -10,20 +10,41 @@ const fs = require("fs");
 
 
 // Route qui permet d'afficher tous les surfs pour un ID user
-router.post("/displayPosts", verifyJWT, (req, res) => {
+router.get("/displayListing", verifyJWT, (req, res) => {
   const user = req.user;
   const { email } = req.user;
 
   User.findOne({ email })
   .then((data) => {
   Surf.find({owner : data._id})
-  .then((surfsDb) => {
-    res.json({ surfsDb });
+  .then((listingData) => {
+    res.json({ result: true, listingData });
+  })
+  })
+})
+
+// Route qui permet de supprimer un surf pour un ID user
+router.delete("/deleteListing", verifyJWT, (req, res) => {
+  const user = req.user;
+  const { email } = req.user;
+
+  User.findOne({ email })
+  .then((data) => {
+  Surf.deleteOne(
+    {owner : data._id},
+    {_id : req.body.surfId}
+  )
+  .then((deleteListing) => {
+    if (deleteListing.deletedCount > 0) {
+    res.json({ result: true, deleteListing });
+  } else {
+    res.json({ result: false, error: 'Listing not found' });
+  }
   })
   })
 })
   
-/* POST surf */
+/* POST d'un nouveau surf via la page Rent */
 router.post("/surfs", verifyJWT, (req, res) => {
   const user = req.user;
   const { email } = req.user;
@@ -34,7 +55,7 @@ router.post("/surfs", verifyJWT, (req, res) => {
     name, //input sur page "Rent"
     dayPrice, //select sur page "Rent"
     pictures, //upload sur page "Rent"
-    placeName, 
+    placeName, //input sur page "Rent"
     latitude,
     longitude,
     availabilities,
@@ -44,7 +65,8 @@ router.post("/surfs", verifyJWT, (req, res) => {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
-
+/*On cherche l'utisateur via son email et si on trouve
+ on prend son objectId en tant que valeur de owner*/
   User.findOne({ email })
   .then((data) => {
   if (data) {
