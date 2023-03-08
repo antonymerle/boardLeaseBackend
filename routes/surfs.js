@@ -8,7 +8,43 @@ const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
-/* POST surf */
+
+// Route qui permet d'afficher tous les surfs pour un ID user
+router.get("/displayListing", verifyJWT, (req, res) => {
+  const user = req.user;
+  const { email } = req.user;
+
+  User.findOne({ email })
+  .then((data) => {
+  Surf.find({owner : data._id})
+  .then((listingData) => {
+    res.json({ result: true, listingData });
+  })
+  })
+})
+
+// Route qui permet de supprimer un surf pour un ID user
+router.delete("/deleteListing", verifyJWT, (req, res) => {
+  const user = req.user;
+  const { email } = req.user;
+
+  User.findOne({ email })
+  .then((data) => {
+  Surf.deleteOne(
+    {owner : data._id},
+    {_id : req.body.surfId}
+  )
+  .then((deleteListing) => {
+    if (deleteListing.deletedCount > 0) {
+    res.json({ result: true, deleteListing });
+  } else {
+    res.json({ result: false, error: 'Listing not found' });
+  }
+  })
+  })
+})
+  
+/* POST d'un nouveau surf via la page Rent */
 router.post("/surfs", verifyJWT, (req, res) => {
   const user = req.user;
   const { email } = req.user;
@@ -18,24 +54,25 @@ router.post("/surfs", verifyJWT, (req, res) => {
     level, //select sur page "Rent"
     name, //input sur page "Rent"
     dayPrice, //select sur page "Rent"
-   pictures, //upload sur page "Rent"
-    placeName, 
+    pictures, //upload sur page "Rent"
+    placeName, //input sur page "Rent"
     latitude,
     longitude,
     availabilities,
   } = req.body;
 
-  /*if (!owner || !type || !name || !availabilities) {
+  if (!type || !level || !name || !dayPrice || !pictures || !placeName || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
-  }*/
-
+  }
+/*On cherche l'utisateur via son email et si on trouve
+ on prend son objectId en tant que valeur de owner*/
   User.findOne({ email })
   .then((data) => {
   if (data) {
-
+    const owner = data._id
   const newSurf = new Surf({
-    owner: email,
+    owner: owner,
     type,
     level,
     name,
@@ -48,7 +85,14 @@ router.post("/surfs", verifyJWT, (req, res) => {
     rating : 0,
     deposit : 200,
   });
-}});
+
+  newSurf.save().then(() => {
+    res.json({ result: true });
+  });
+  } else {
+    res.json({ result: false, error : "user not found"});
+  }
+});
 })
 
 // AFFICHAGE DES SURFS //
