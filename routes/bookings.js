@@ -39,7 +39,6 @@ router.post("/", verifyJWT, async (req, res) => {
   if (!email) return res.json({ result: false, error: "User token missing." });
 
   const tenant = await User.findOne({ email });
-  console.log(tenant);
 
   if (
     !req.body.surfId ||
@@ -119,7 +118,6 @@ router.post("/", verifyJWT, async (req, res) => {
       })
         .then(() => Surf.findById(surfId))
         .then((updatedSurf) => {
-          const transactionId = uid2(32);
           const newBooking = new Booking({
             tenant: tenant._id,
             owner: updatedSurf.owner,
@@ -131,7 +129,7 @@ router.post("/", verifyJWT, async (req, res) => {
             endDate,
             transactionId,
             paymentDate: Date.now(),
-            paymentMode: "creditCard",
+            paymentMode,
             paymentAmount: totalPrice,
             isPaid,
           });
