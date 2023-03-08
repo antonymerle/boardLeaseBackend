@@ -30,19 +30,22 @@ router.delete("/deleteListing", verifyJWT, (req, res) => {
 
   User.findOne({ email })
   .then((data) => {
+    console.log("etape 1", data)
+
   Surf.deleteOne(
-    {owner : data._id},
-    {_id : req.body.surfId}
-  )
-  .then((deleteListing) => {
-    if (deleteListing.deletedCount > 0) {
+    {_id : req.body._id}
+    )
+  .then((deleteListing) => { console.log("delete", deleteListing)
+    if (deleteListing) {
     res.json({ result: true, deleteListing });
   } else {
     res.json({ result: false, error: 'Listing not found' });
   }
-  })
-  })
 })
+})
+})
+  
+
   
 /* POST d'un nouveau surf via la page Rent */
 router.post("/surfs", verifyJWT, (req, res) => {
@@ -86,8 +89,8 @@ router.post("/surfs", verifyJWT, (req, res) => {
     deposit : 200,
   });
 
-  newSurf.save().then(() => {
-    res.json({ result: true });
+  newSurf.save().then((data) => {
+    res.json({ result: true, data });
   });
   } else {
     res.json({ result: false, error : "user not found"});
