@@ -64,7 +64,7 @@ router.post("/surfs", verifyJWT, (req, res) => {
     availabilities,
   } = req.body;
 
-  if (!type || !level || !name || !dayPrice || !pictures || !placeName || !availabilities) {
+  if (!type || !level || !name || !dayPrice || !picture || !placeName || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
@@ -260,8 +260,9 @@ router.get("/:id", (req, res) => {
     }
   });
 });
+
 //Route pour upload une image sur cloudinary
-router.post("/upload", async (req, res) => {
+router.post("/upload", verifyJWT, async (req, res) => {
   const photoPath = `./tmp/${uniqid()}.jpg`;
   console.log(req.files)
   const resultMove = await req.files.photoFromFront.mv(photoPath);
