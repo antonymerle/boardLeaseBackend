@@ -8,7 +8,6 @@ const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
-
 // Route qui permet d'afficher tous les surfs pour un ID user
 router.get("/displayListing", verifyJWT, (req, res) => {
   const user = req.user;
@@ -261,8 +260,8 @@ router.get("/:id", (req, res) => {
   });
 });
 
-//Route pour upload une image sur cloudinary
-router.post("/upload", verifyJWT, async (req, res) => {
+/*Route pour upload une image sur cloudinary
+router.post("/upload", async (req, res) => {
   const photoPath = `./tmp/${uniqid()}.jpg`;
 
   const resultMove = await req.files.photoFromFront.mv(photoPath);
@@ -275,7 +274,7 @@ router.post("/upload", verifyJWT, async (req, res) => {
   } else {
     res.json({ result: false, error: resultCopy });
   }
-});
+});*/
 
 /**
  * @name POST: /surfs/ownerName
