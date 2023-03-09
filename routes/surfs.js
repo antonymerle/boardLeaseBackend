@@ -264,9 +264,9 @@ router.get("/:id", (req, res) => {
 //Route pour upload une image sur cloudinary
 router.post("/upload", verifyJWT, async (req, res) => {
   const photoPath = `./tmp/${uniqid()}.jpg`;
-  console.log(req.files)
+
   const resultMove = await req.files.photoFromFront.mv(photoPath);
-console.log(resultMove)
+
   
   if(!resultMove) {
       const resultCloudinary = await cloudinary.uploader.upload(photoPath);
