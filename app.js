@@ -16,7 +16,12 @@ const fileUpload = require("express-fileupload");
 app.use(fileUpload());
 
 const cors = require("cors");
-app.use(cors());
+const corsOptions ={
+    origin:'https://board-lease-frontend.vercel.app/',
+    credentials:true,            //access-control-allow-credentials:true
+    optionSuccessStatus:200
+}
+app.use(cors(corsOptions));
 
 app.use(logger("dev"));
 app.use(express.json());
