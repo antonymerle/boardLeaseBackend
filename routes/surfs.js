@@ -63,7 +63,7 @@ router.post("/surfs", verifyJWT, (req, res) => {
     availabilities,
   } = req.body;
 
-  if (!type || !level || !name || !dayPrice || !picture || !placeName || !availabilities) {
+  if (!type || !level || !name || !dayPrice || !pictures || !placeName || !availabilities) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
