@@ -9,7 +9,6 @@ const Surf = require("../models/surfs");
 const Booking = require("../models/bookings");
 
 const { checkAvailabibility } = require("../lib/leaseLibrary");
-const uid2 = require("uid2"); // generate fake transaction ID;
 
 /**
  * @name POST: /bookings
@@ -163,7 +162,7 @@ router.get("/", verifyJWT, async (req, res) => {
     const tenantBookings = await Booking.find({ tenant: tenant._id })
       .populate("owner")
       .populate("surf");
-    // console.log({ tenantBookings });
+    console.log({ tenantBookings });
     const tenantBookingsFiltered = tenantBookings.map((tenantBooking) => {
       return {
         owner: tenantBooking.owner.firstname,
