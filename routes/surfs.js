@@ -4,33 +4,39 @@ var router = express.Router();
 const Surf = require("../models/surfs");
 const User = require("../models/users");
 const { dateRangeOverlaps } = require("../lib/leaseLibrary");
-const uniqid = require("uniqid");
-const cloudinary = require("cloudinary").v2;
-const fs = require("fs");
+
 
 // Route qui permet d'afficher tous les surfs pour un ID user
 router.get("/displayListing", verifyJWT, (req, res) => {
-  const user = req.user;
-  const { email } = req.user;
 
+  const { email } = req.user;
+    
   User.findOne({ email })
   .then((data) => {
+    if (!data) {
+      res.json({ result: false });
+    return;
+  }
   Surf.find({owner : data._id})
   .then((listingData) => {
     res.json({ result: true, listingData });
   })
-  })
+})
+
 })
 
 // Route qui permet de supprimer un surf pour un ID user
 router.delete("/deleteListing", verifyJWT, (req, res) => {
-  const user = req.user;
+  
   const { email } = req.user;
 
   User.findOne({ email })
   .then((data) => {
     console.log("etape 1", data)
-
+    if (!data) {
+      res.json({ result: false });
+    return;
+  }
   Surf.deleteOne(
     {_id : req.body._id}
     )
@@ -48,7 +54,7 @@ router.delete("/deleteListing", verifyJWT, (req, res) => {
   
 /* POST d'un nouveau surf via la page Rent */
 router.post("/surfs", verifyJWT, (req, res) => {
-  const user = req.user;
+ 
   const { email } = req.user;
 
   const {
@@ -108,7 +114,7 @@ router.get("/", (req, res) => {
 /* GESTION DES FAVORIS 
 PUT Add / Remove surfs favorites for an user */
 router.put("/addFavorite/:id", verifyJWT, (req, res) => {
-  const user = req.user;
+  
   const { email } = req.user;
 
   if (!req.params.id) {
@@ -119,6 +125,10 @@ router.put("/addFavorite/:id", verifyJWT, (req, res) => {
   User.findOne({ email })
     .populate("favorites")
     .then((data) => {
+      if (!data) {
+        res.json({ result: false });
+      return;
+    }
       if (data.favorites.find((surf) => surf._id == req.params.id)) {
         console.log("surf déjà présent dans favoris");
 
@@ -158,9 +168,8 @@ router.put("/addFavorite/:id", verifyJWT, (req, res) => {
 
 // Get all surfs listing from favorites for an user
 router.get("/favorites", verifyJWT, (req, res) => {
-  const user = req.user;
+  
   const { email } = req.user;
-
   User.findOne({ email })
     .populate("favorites")
     .then((favoritesDb) => {
@@ -175,8 +184,10 @@ router.get("/favorites", verifyJWT, (req, res) => {
 /* RECHERCHE ET FILTRE 
 Route POST pour la gestion des recherches de surfs et de filtres */
 router.post("/filter", (req, res) => {
-  //On déclare 3 variables afin de savoir si on a une valeur dans type et level
+  //On déclare 2 variables afin de savoir si on a une valeur dans type et level
   //si non (en cas de tableau vide) on affiche toutes les clefs.
+  /*When <boolean> is true, $exists matches the documents that contain the field, including documents where the field value is null. 
+  If <boolean> is false, the query returns only the documents that do not contain the field. */
   let type = req.body.type;
   if (type.length < 1) {
     type = { $exists: true };
@@ -219,9 +230,9 @@ router.post("/filter", (req, res) => {
 /* RATING
 Update rating stars*/
 router.put("/rating/:id", verifyJWT, (req, res) => {
-  const user = req.user;
+  
   const { email } = req.user;
-
+  
   if (!req.params.id || !req.body.rating) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
@@ -260,21 +271,6 @@ router.get("/:id", (req, res) => {
   });
 });
 
-/*Route pour upload une image sur cloudinary
-router.post("/upload", async (req, res) => {
-  const photoPath = `./tmp/${uniqid()}.jpg`;
-
-  const resultMove = await req.files.photoFromFront.mv(photoPath);
-
-  
-  if(!resultMove) {
-      const resultCloudinary = await cloudinary.uploader.upload(photoPath);
-      fs.unlinkSync(photoPath);
-      res.json({ result: true, url: resultCloudinary.secure_url });
-  } else {
-    res.json({ result: false, error: resultCopy });
-  }
-});*/
 
 /**
  * @name POST: /surfs/ownerName
